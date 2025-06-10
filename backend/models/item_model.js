@@ -22,6 +22,10 @@ const itemSchema=new mongoose.Schema({
             type:String,
             required:true
         }
+    },
+    creatorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'admin'
     }
 })
 

@@ -1,8 +1,10 @@
 import path from 'path'; // Import path module for file extension handling
 import { item } from "../models/item_model.js"; // Ensure the item model is imported correctly
 import { v2 as cloudinary } from 'cloudinary';
+import { Purchase } from "../models/purchase.model.js"; // Import the Purchase model for handling purchases
 
 const createItem = async (req, res) => {
+    const adminId=req.adminId
     const { name, description, price } = req.body;
     try {
         // Validate input
@@ -40,6 +42,7 @@ const createItem = async (req, res) => {
                 public_id: cloud_response.public_id, // Use the public_id from Cloudinary response
                 url: cloud_response.secure_url, // Use the secure_url from Cloudinary response
             },
+            creatorId: adminId
         });
 
         // Save the item to the database
@@ -53,18 +56,27 @@ const createItem = async (req, res) => {
     }
 };
 
-const updateItem=async (req,res) =>{
-    const { itemId } = req.params;
+const updateItem = async (req, res) => {
+    const { itemId } = req.params; // Use req.params for itemId
+    const adminId  = req.adminId; // Ensure adminId is present (adjust as per your middleware)
     const { name, description, price, image } = req.body;
-    if (!req.body) {
-        return res.status(400).json({ error: "Request body is missing" });
+
+    // console.log("Update Item Request Body:", adminId, itemId); // Debugging line
+    if (!itemId || !adminId) {
+        return res.status(400).json({ error: "itemId and adminId are required" });
     }
 
+    // Build update object with only provided fields
+    const updateFields = {};
+    if (name !== undefined) updateFields.name = name;
+    if (description !== undefined) updateFields.description = description;
+    if (price !== undefined) updateFields.price = price;
+    if (image !== undefined) updateFields.image = image;
+
     try {
-        // Find and update the item
-        const updatedItem = await item.findByIdAndUpdate(
-            itemId,
-            { name, description, price, image },
+        const updatedItem = await item.findOneAndUpdate(
+            {_id: itemId, creatorId: adminId}, // Ensure the item belongs to the admin
+            updateFields,
             { new: true, runValidators: true }
         );
 
@@ -81,13 +93,14 @@ const updateItem=async (req,res) =>{
 
 const deleteItem = async (req,res)=>{
     const {itemId} =req.params;
+    const adminId = req.adminId; // Ensure adminId is present (adjust as per your middleware)
     try {
-        const deletedItem=await item.findByIdAndDelete(itemId);
-        if(!deleteItem){
+        const deletedItem=await item.findOneAndDelete({_id:itemId, creatorId: adminId});
+        if(!deletedItem){
             return res.status(404).json({error: "Item not found"});
         }
 
-        res.status(201).json({message:"Item deleted successfully", item:deleteItem});
+        res.status(201).json({message:"Item deleted successfully", item:deletedItem});
     } catch (error) {
         console.log("Error in item Deletion", error);
     }
@@ -109,6 +122,24 @@ const getItems = async (req, res) => {
     }
 };
 
+const getItemsOfAdmin= async (req, res) => {    
+    
+    const adminId = req.adminId; // Ensure adminId is present (adjust as per your middleware)
+    try {
+        // Retrieve all items created by the admin
+        const items = await item.find({ creatorId: adminId });
+
+        if (!items || items.length === 0) {
+            return res.status(404).json({ error: "No items found for this admin" });
+        }
+
+        res.status(200).json({ message: "Items retrieved successfully", items });
+    } catch (error) {
+        console.error("Error retrieving admin's items:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}   
+
 const itemDetails = async (req, res) => {
     const { itemId } = req.params;
 
@@ -127,4 +158,35 @@ const itemDetails = async (req, res) => {
     }
 };
 
-export {itemDetails,getItems,deleteItem,createItem,updateItem};
+const buyItem = async (req, res) => {
+    // console.log("Buying item...");
+    const { itemId } = req.params;
+    const {count}= req.body;
+    try {
+        // Find the item by ID
+        const itemToBuy = await item.findById(itemId);  
+        if (!itemToBuy) {
+            return res.status(404).json({ error: "Item not found" });
+        }      
+
+        const purchaseCount = count || 1;
+        const totalPrice = itemToBuy.price * purchaseCount;
+
+        const newPurchase = new Purchase({
+            userId: req.userId, // Assuming user ID is stored in req.user
+            itemId: itemToBuy._id,
+            count: purchaseCount,
+            totalPrice// Default to 1 if count is not provided
+        });
+
+        await newPurchase.save();
+        
+        res.status(200).json({ message: "Item purchased successfully", item: itemToBuy });
+    } catch (error) {
+        console.error("Error buying item:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+    
+};  
+
+export {getItemsOfAdmin,buyItem,itemDetails,getItems,deleteItem,createItem,updateItem};
