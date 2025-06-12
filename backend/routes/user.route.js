@@ -1,16 +1,16 @@
 import express from 'express'
-import {getAllPurchases,getUsers,deleteUser,signUp,signIn,updateUser,signOut, getUserDetails} from '../controllers/user.controller.js'
+import {getSellers,getAllPurchases,getUsers,deleteUser,signUp,signIn,updateUser,signOut, getDetails} from '../controllers/user.controller.js'
 import validateUser from '../middleware/user.middleware.js';
-import validateAdmin from '../middleware/admin.middleware.js';
 const router=express.Router();
 
 router.post('/signup',signUp)
 router.post('/signout',signOut)
 router.post('/signIn',signIn)
-router.put('/update/:userId',validateUser,updateUser)
-router.delete('/delete/:userId',validateUser,deleteUser)
-router.get('/purchases', validateUser, getAllPurchases)
+router.put('/:userId/update',validateUser,updateUser)
+router.delete('/:userId/delete',validateUser,deleteUser)
+router.get('/:userId/purchases', validateUser, getAllPurchases)
 router.get('/allusers',getUsers)
-router.get('/:userId',validateUser,getUserDetails)
+router.get('/allSellers',getSellers)
+router.get('/:userId',validateUser,getDetails)
 
 export default router

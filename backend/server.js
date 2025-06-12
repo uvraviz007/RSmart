@@ -3,10 +3,11 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import itemRoute from './routes/item.route.js'
 import userRoute from './routes/user.route.js'
-import adminRoute from './routes/admin.route.js'
+// import adminRoute from './routes/admin.route.js'
 import { v2 as cloudinary } from 'cloudinary';
 import fileUpload from 'express-fileupload';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 const app = express();
 dotenv.config()
@@ -29,9 +30,13 @@ try{
     console.log(error)
 }
 
+app.use(cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true
+}))
 app.use('/api/v1/items',itemRoute)
 app.use('/api/v1/users',userRoute)
-app.use('/api/v1/admins',adminRoute)
+// app.use('/api/v1/admins',adminRoute)
 
 cloudinary.config({ 
   cloud_name: process.env.CLOUD_NAME, 

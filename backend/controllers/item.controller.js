@@ -4,7 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { Purchase } from "../models/purchase.model.js"; // Import the Purchase model for handling purchases
 
 const createItem = async (req, res) => {
-    const adminId=req.adminId
+    const sellerId=req.sellerId
     const { name, description, price } = req.body;
     try {
         // Validate input
@@ -42,7 +42,7 @@ const createItem = async (req, res) => {
                 public_id: cloud_response.public_id, // Use the public_id from Cloudinary response
                 url: cloud_response.secure_url, // Use the secure_url from Cloudinary response
             },
-            creatorId: adminId
+            creatorId: sellerId
         });
 
         // Save the item to the database
@@ -58,12 +58,12 @@ const createItem = async (req, res) => {
 
 const updateItem = async (req, res) => {
     const { itemId } = req.params; // Use req.params for itemId
-    const adminId  = req.adminId; // Ensure adminId is present (adjust as per your middleware)
+    const sellerId  = req.sellerId; // Ensure sellerId is present (adjust as per your middleware)
     const { name, description, price, image } = req.body;
 
-    // console.log("Update Item Request Body:", adminId, itemId); // Debugging line
-    if (!itemId || !adminId) {
-        return res.status(400).json({ error: "itemId and adminId are required" });
+    // console.log("Update Item Request Body:", sellerId, itemId); // Debugging line
+    if (!itemId || !sellerId) {
+        return res.status(400).json({ error: "itemId and sellerId are required" });
     }
 
     // Build update object with only provided fields
@@ -75,7 +75,7 @@ const updateItem = async (req, res) => {
 
     try {
         const updatedItem = await item.findOneAndUpdate(
-            {_id: itemId, creatorId: adminId}, // Ensure the item belongs to the admin
+            {_id: itemId, creatorId: sellerId}, // Ensure the item belongs to the seller
             updateFields,
             { new: true, runValidators: true }
         );
@@ -93,9 +93,9 @@ const updateItem = async (req, res) => {
 
 const deleteItem = async (req,res)=>{
     const {itemId} =req.params;
-    const adminId = req.adminId; // Ensure adminId is present (adjust as per your middleware)
+    const sellerId = req.sellerId; // Ensure sellerId is present (adjust as per your middleware)
     try {
-        const deletedItem=await item.findOneAndDelete({_id:itemId, creatorId: adminId});
+        const deletedItem=await item.findOneAndDelete({_id:itemId, creatorId: sellerId});
         if(!deletedItem){
             return res.status(404).json({error: "Item not found"});
         }
@@ -122,20 +122,20 @@ const getItems = async (req, res) => {
     }
 };
 
-const getItemsOfAdmin= async (req, res) => {    
+const getItemsOfSeller= async (req, res) => {    
     
-    const adminId = req.adminId; // Ensure adminId is present (adjust as per your middleware)
+    const sellerId = req.sellerId; // Ensure sellerId is present (adjust as per your middleware)
     try {
-        // Retrieve all items created by the admin
-        const items = await item.find({ creatorId: adminId });
+        // Retrieve all items created by the seller
+        const items = await item.find({ creatorId: sellerId });
 
         if (!items || items.length === 0) {
-            return res.status(404).json({ error: "No items found for this admin" });
+            return res.status(404).json({ error: "No items found for this seller" });
         }
 
         res.status(200).json({ message: "Items retrieved successfully", items });
     } catch (error) {
-        console.error("Error retrieving admin's items:", error);
+        console.error("Error retrieving seller's items:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 }   
@@ -189,4 +189,4 @@ const buyItem = async (req, res) => {
     
 };  
 
-export {getItemsOfAdmin,buyItem,itemDetails,getItems,deleteItem,createItem,updateItem};
+export {getItemsOfSeller,buyItem,itemDetails,getItems,deleteItem,createItem,updateItem};

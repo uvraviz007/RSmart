@@ -17,98 +17,122 @@ const userSchema = z.object({
         .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, "Password must include one uppercase letter, one lowercase letter, one digit, and one special character"),
 });
 
+// Import zod at the top if not already
 const signUp = async (req, res) => {
     try {
         // Validate input using Zod
         const validatedData = userSchema.parse(req.body);
 
-        // Check if email already exists
+        // Check if email or mobile already exists
         const existingUser = await User.findOne({ email: validatedData.email });
         if (existingUser) {
             return res.status(400).json({ error: "Email already exists" });
         }
-        const existingMobile = await User.findOne({ email: validatedData.mobile });
+        const existingMobile = await User.findOne({ mobile: validatedData.mobile });
         if (existingMobile) {
-            return res.status(400).json({ error: "Number already exists" });
+            return res.status(400).json({ error: "Mobile number already exists" });
         }
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(validatedData.password, 10);
 
-        // Create a new instance of the User model
+        // Only allow isSeller if passed and truthy (you can also add seller-auth logic here)
+        const isSeller = req.body.isSeller === true || req.body.isSeller === "true"; // Accepts string "true" or boolean true
+
+        // Create a new User
         const newUser = new User({
             ...validatedData,
-            password: hashedPassword, // Save hashed password
+            password: hashedPassword,
+            isSeller
         });
 
-        // Disable Mongoose validation for the hashed password
-        newUser.validateSync = function () {}; // Override validation for this instance
-
-        // Save the User to the database
         await newUser.save();
 
-        // Respond with the created User
-        res.status(201).json({ message: "Successfully signed up", user: newUser });
+        // Generate JWT token
+        const token = jwt.sign(
+            { userId: newUser._id, email: newUser.email, isSeller: newUser.isSeller },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
+
+        // Set cookie
+        const cookieOptions = {
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict"
+        };
+
+        res.cookie("jwt", token, cookieOptions);
+
+        res.status(201).json({
+            message: "Successfully signed up and logged in",
+            token,
+            user: newUser
+        });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            // Handle validation errors
             return res.status(400).json({ error: error.errors });
         }
-        console.error("Error creating User:", error);
+        console.error("Error creating user:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
 
+
 const signIn = async (req, res) => {
     try {
-        // Validate input using Zod
+        // Validate input
         const validatedData = userSchema.pick({ email: true, password: true }).parse(req.body);
-        
-        // Find the user by email
+
+        // Find user
         const user = await User.findOne({ email: validatedData.email });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Check if the password matches the hashed password
+        // Compare password
         const isPasswordValid = await bcrypt.compare(validatedData.password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ error: "Invalid password" });
         }
 
-        console.log(console.JWT_SECRET)
+        // Generate token
         const token = jwt.sign(
-            { userId: user._id, email: user.email },
+            { userId: user._id, email: user.email, isSeller: user.isSeller },
             process.env.JWT_SECRET,
-            {expiresIn: "1d"}
+            { expiresIn: "1d" }
         );
-        // Respond with the authenticated user
-        const cookieOption={
-            expires: new Date(Date.now() + 24*60*60*1000),
+
+        // Set cookie
+        const cookieOptions = {
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
             httpOnly: true,
-            secure: process.env.NODE_ENV == 'production',
-            sameSite: 'Strict' //csrf attack prevention
-        }
-        res.cookie('jwt',token)
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict"
+        };
+
+        res.cookie("jwt", token, cookieOptions);
+
         res.status(200).json({ message: "Successfully signed in", token, user });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            // Handle validation errors
             return res.status(400).json({ error: error.errors });
         }
-        console.error("Error signing in User:", error);
+        console.error("Error signing in user:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
 
+
 const updateUser = async (req, res) => {
-    const { userId } = req.params;
-    const currUserId = req.userId; // Assuming user ID is stored in req.user
+    // const { userId } = req.params;
+    const userId = req.userId; // Assuming user ID is stored in req.user
     try {
         // Validate input using Zod
-        if (userId !== currUserId) {
-            return res.status(403).json({ error: "You can only update your own profile" });
-        }
+        // if (userId !== currUserId) {
+        //     return res.status(403).json({ error: "You can only update your own profile" });
+        // }
         const validatedData = userSchema.partial().parse(req.body);
 
         // Find the existing user
@@ -145,12 +169,12 @@ const updateUser = async (req, res) => {
 };
 
 const deleteUser = async (req, res) => {
-    const { userId } = req.params;
-    const currUserId = req.userId; // Assuming user ID is stored in req.user
+    // const { userId } = req.params;
+    const userId = req.userId; // Assuming user ID is stored in req.user
     try {
-        if( userId !== currUserId) {    
-            return res.status(403).json({ error: "You can only delete your own profile" });
-        }
+        // if( userId !== currUserId) {    
+        //     return res.status(403).json({ error: "You can only delete your own profile" });
+        // }
         
         const deletedUser = await User.findByIdAndDelete(userId);
         if (!deletedUser) {
@@ -166,19 +190,35 @@ const deleteUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
     try {
-        // Retrieve all Users from the database
-        const users = await User.find();
+        // Retrieve all non-seller users from the database
+        const users = await User.find({ isSeller: false });
 
         if (!users || users.length === 0) {
-            return res.status(404).json({ error: "No users found" });
+            return res.status(404).json({ error: "No non-seller users found" });
         }
 
-        res.status(200).json({ message: "Users retrieved successfully", users });
+        res.status(200).json({ message: "Non-seller users retrieved successfully", users });
     } catch (error) {
         console.error("Error retrieving Users:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
+const getSellers = async (req, res) => {
+    try {
+        // Retrieve all seller users from the database
+        const sellers = await User.find({ isSeller: true });
+
+        if (!sellers || sellers.length === 0) {
+            return res.status(404).json({ error: "No seller users found" });
+        }
+
+        res.status(200).json({ message: "Seller users retrieved successfully", sellers });
+    } catch (error) {
+        console.error("Error retrieving Sellers:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};   
 
 
 const getAllPurchases = async (req,res) => {
@@ -219,12 +259,12 @@ const signOut = (req, res) => {
     }   
 }
 
-const getUserDetails = async (req, res) => {
+const getDetails = async (req, res) => {
     const userId = req.userId; // Assuming user ID is stored in req.user
 
     try {
         // Find the user by ID
-        const user = await User.findById(userId).select("-password"); // Exclude password from response
+        const user = await User.findById(userId).select("-password -isSeller"); // Exclude password from response
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }   
@@ -235,4 +275,5 @@ const getUserDetails = async (req, res) => {
     }
 };
 
-export {getAllPurchases, getUserDetails,getUsers, deleteUser, signUp, signIn, signOut, updateUser };
+
+export {getAllPurchases, getDetails, getUsers, getSellers, deleteUser, signUp, signIn, signOut, updateUser };

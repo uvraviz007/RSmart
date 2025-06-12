@@ -25,7 +25,7 @@ const itemSchema=new mongoose.Schema({
     },
     creatorId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'admin'
+        ref: 'user'
     }
 })
 
