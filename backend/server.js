@@ -32,10 +32,12 @@ try{
 
 app.use(cors({
     origin: process.env.CLIENT_URL,
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }))
-app.use('/api/v1/items',itemRoute)
-app.use('/api/v1/users',userRoute)
+app.use('/api/item',itemRoute)
+app.use('/api/user',userRoute)
 // app.use('/api/v1/admins',adminRoute)
 
 cloudinary.config({ 

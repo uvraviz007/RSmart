@@ -126,56 +126,46 @@ const signIn = async (req, res) => {
 
 
 const updateUser = async (req, res) => {
-    // const { userId } = req.params;
-    const userId = req.userId; // Assuming user ID is stored in req.user
-    try {
-        // Validate input using Zod
-        // if (userId !== currUserId) {
-        //     return res.status(403).json({ error: "You can only update your own profile" });
-        // }
-        const validatedData = userSchema.partial().parse(req.body);
+  const userId = req.userId;
 
-        // Find the existing user
-        const existingUser = await User.findById(userId);
-        if (!existingUser) {
-            return res.status(404).json({ error: "User not found" });
-        }
+  try {
+    const { oldPassword, password, ...updateFields } = req.body;
 
-        // Hash the password if it is being updated
-        const updateFields = {};
-        if (validatedData.firstName !== undefined) updateFields.firstName = validatedData.firstName;
-        if (validatedData.email !== undefined) updateFields.email = validatedData.email;
-        if (validatedData.mobile !== undefined) updateFields.mobile = validatedData.mobile;
-        if (validatedData.password !== undefined) {
-            updateFields.password = await bcrypt.hash(validatedData.password, 10);
-        }
+    const existingUser = await User.findById(userId);
+    if (!existingUser) return res.status(404).json({ error: "User not found" });
 
-        // Update the user in the database
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { $set: updateFields },
-            { new: true, runValidators: true }
-        );
+    if (!oldPassword) return res.status(400).json({ error: "Current password is required." });
 
-        res.status(200).json({ message: "User updated successfully", user: updatedUser });
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            // Handle validation errors
-            return res.status(400).json({ error: error.errors });
-        }
-        console.error("Error updating User:", error);
-        res.status(500).json({ error: "Internal server error" });
+    const isPasswordValid = await bcrypt.compare(oldPassword, existingUser.password);
+    if (!isPasswordValid) return res.status(401).json({ error: "Incorrect current password." });
+
+    let schema = userSchema.partial();
+    if (!password) {
+      schema = schema.omit({ password: true });
     }
+
+    const validatedData = schema.parse(updateFields);
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      validatedData.password = hashedPassword;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, { $set: validatedData }, { new: true, runValidators: true });
+
+    res.status(200).json({ message: "User updated successfully", user: updatedUser });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 const deleteUser = async (req, res) => {
-    // const { userId } = req.params;
     const userId = req.userId; // Assuming user ID is stored in req.user
     try {
-        // if( userId !== currUserId) {    
-        //     return res.status(403).json({ error: "You can only delete your own profile" });
-        // }
-        
         const deletedUser = await User.findByIdAndDelete(userId);
         if (!deletedUser) {
             return res.status(404).json({ error: "User not found" });
@@ -222,9 +212,7 @@ const getSellers = async (req, res) => {
 
 
 const getAllPurchases = async (req,res) => {
-//    console.log("Fetching all purchases..."); 
     const userId=req.userId;
-    // console.log("user Id:", userId);
     try {
         const purchase=await Purchase.find({userId})
 
@@ -264,7 +252,7 @@ const getDetails = async (req, res) => {
 
     try {
         // Find the user by ID
-        const user = await User.findById(userId).select("-password -isSeller"); // Exclude password from response
+        const user = await User.findById(userId).select("-password"); // Only exclude password
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }   
@@ -275,5 +263,11 @@ const getDetails = async (req, res) => {
     }
 };
 
+const checkLoginStatus = (req, res) => {
+    if (req.userId) {
+        return res.status(200).json({ loggedIn: true, user: req.user });
+    }
+    res.status(401).json({ loggedIn: false });
+};
 
-export {getAllPurchases, getDetails, getUsers, getSellers, deleteUser, signUp, signIn, signOut, updateUser };
+export {getAllPurchases, getDetails, getUsers, getSellers, deleteUser, signUp, signIn, signOut, updateUser, checkLoginStatus };

@@ -2,17 +2,18 @@ import jwt from "jsonwebtoken";
 
 const validateUser = (req, res, next) => {
     try {
+        let token = null;
+
+        // 1. Try to get token from Authorization header
         const authHeader = req.headers.authorization;
-        // console.log("Authorization Header:", authHeader); // Debugging line
-        if (!authHeader || (!authHeader.startsWith("Bearer ") && !authHeader.startsWith("Bearer: "))) {
-            return res.status(401).json({ error: "Invalid token format. Expected 'Bearer <token>'." });
+        if (authHeader && (authHeader.startsWith("Bearer ") || authHeader.startsWith("Bearer: "))) {
+            token = authHeader.replace("Bearer", "").replace(":", "").trim();
         }
 
-        // Extract token safely from both formats
-        const token = authHeader
-            .replace("Bearer", "")
-            .replace(":", "")
-            .trim();
+        // 2. If not found, try to get token from cookie
+        if (!token && req.cookies && req.cookies.jwt) {
+            token = req.cookies.jwt;
+        }
 
         if (!token) {
             return res.status(401).json({ error: "Access denied. No token provided." });
@@ -23,7 +24,7 @@ const validateUser = (req, res, next) => {
 
         // Attach user info to request
         req.user = decoded;
-        req.userId = decoded.userId; // Add this for convenience
+        req.userId = decoded.userId;
 
         next();
     } catch (error) {

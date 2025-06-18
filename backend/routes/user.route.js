@@ -1,5 +1,5 @@
 import express from 'express'
-import {getSellers,getAllPurchases,getUsers,deleteUser,signUp,signIn,updateUser,signOut, getDetails} from '../controllers/user.controller.js'
+import {checkLoginStatus,getSellers,getAllPurchases,getUsers,deleteUser,signUp,signIn,updateUser,signOut, getDetails} from '../controllers/user.controller.js'
 import validateUser from '../middleware/user.middleware.js';
 const router=express.Router();
 
@@ -12,5 +12,6 @@ router.get('/:userId/purchases', validateUser, getAllPurchases)
 router.get('/allusers',getUsers)
 router.get('/allSellers',getSellers)
 router.get('/:userId',validateUser,getDetails)
+router.get('/me', validateUser,checkLoginStatus);
 
 export default router
