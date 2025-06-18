@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 function AddItem() {
   const [form, setForm] = useState({
@@ -176,6 +177,7 @@ function AddItem() {
           </form>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

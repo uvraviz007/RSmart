@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 function Profile() {
   const [userData, setUserData] = useState(null);
@@ -133,6 +134,7 @@ function Profile() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

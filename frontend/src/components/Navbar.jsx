@@ -143,14 +143,7 @@ function Navbar() {
               className="bg-transparent text-white px-4 py-2 border border-white transition duration-300
                 hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
             >
-              Login
-            </Link>
-            <Link
-              to="/signup"
-              className="bg-transparent text-white px-4 py-2 border border-white transition duration-300
-                hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
-            >
-              Register
+              Login/Register
             </Link>
           </>
         )}

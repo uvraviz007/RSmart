@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Navbar from "./Navbar"; // Assuming you have a Navbar component
+import { useNavigate, Link } from "react-router-dom";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 function Login() {
   const [form, setForm] = useState({
@@ -55,16 +56,11 @@ function Login() {
   };
 
   return (
-    <>
-    <div className="bg-gradient-to-r from-black via-blue-950 to-cyan-700">
-      <div className=" text-white container mx-auto">
+    <div className="bg-gradient-to-r from-black via-blue-950 to-cyan-700 min-h-screen">
+      <div className="text-white container mx-auto">
         <Navbar />
-        <div />
       </div>
-    </div>
-    <div>
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-black via-blue-950 to-cyan-700">
-        {/* <Navbar /> */}
+      <div className="flex flex-col items-center justify-center min-h-[80vh]">
         <form
           onSubmit={handleSubmit}
           className="bg-black bg-opacity-60 p-8 rounded-lg shadow-lg w-full max-w-md"
@@ -171,10 +167,21 @@ function Login() {
               Login
             </button>
           </div>
+
+          {/* New User Section */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-400">New user?</p>
+            <Link
+              to="/signup"
+              className="text-cyan-400 hover:text-cyan-300 transition duration-300 inline-block mt-2"
+            >
+              Register here
+            </Link>
+          </div>
         </form>
       </div>
+      <Footer />
     </div>
-    </>
   );
 }
 

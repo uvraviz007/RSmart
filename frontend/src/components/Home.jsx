@@ -107,6 +107,48 @@ function Home() {
             </p>
           </section>
 
+          {/* Categories Slider */}
+          <section className="mb-10">
+            <h3 className="text-2xl font-bold text-cyan-300 mb-4 text-center">
+              Shop by Category
+            </h3>
+            <div className="overflow-x-hidden whitespace-nowrap py-4 px-2 scrollbar-hide">
+              <div
+                className="inline-flex gap-8"
+                style={{
+                  width: sliderWidth > containerWidth ? `${sliderWidth * 2}px` : '100%',
+                  animation: sliderWidth > containerWidth
+                    ? `slide-circular ${sliderWidth / 60}s linear infinite`
+                    : 'none',
+                  justifyContent: sliderWidth <= containerWidth ? 'center' : 'flex-start'
+                }}
+                ref={sliderRef}
+              >
+                {(sliderWidth > containerWidth ? [...categories, ...categories] : categories).map((category, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-black bg-opacity-40 rounded-xl shadow-lg p-4 min-w-[180px] flex flex-col items-center hover:scale-105 transition-transform duration-300 cursor-pointer"
+                    onClick={() => setFilters(prev => ({ ...prev, category }))}
+                  >
+                    <span className="text-4xl mb-2">
+                      {category === 'Electronics' ? '💻' :
+                       category === 'Fashion' ? '👕' :
+                       category === 'Home' ? '🏠' :
+                       category === 'Sports' ? '⚽' :
+                       category === 'Books' ? '📚' :
+                       category === 'Beauty' ? '💄' :
+                       category === 'Toys' ? '🎮' :
+                       category === 'Health' ? '💊' : '🏷️'}
+                    </span>
+                    <span className="text-cyan-200 font-semibold">
+                      {category}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
           {/* Search and Filters */}
           <section className="mb-10 px-4">
             <div className="bg-black bg-opacity-40 rounded-xl p-4">
@@ -148,48 +190,6 @@ function Home() {
                   onChange={handleFilterChange}
                   className="bg-gray-800 text-white px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 />
-              </div>
-            </div>
-          </section>
-
-          {/* Categories Slider */}
-          <section className="mb-10">
-            <h3 className="text-2xl font-bold text-cyan-300 mb-4 text-center">
-              Shop by Category
-            </h3>
-            <div className="overflow-x-hidden whitespace-nowrap py-4 px-2 scrollbar-hide">
-              <div
-                className="inline-flex gap-8"
-                style={{
-                  width: sliderWidth > containerWidth ? `${sliderWidth * 2}px` : '100%',
-                  animation: sliderWidth > containerWidth
-                    ? `slide-circular ${sliderWidth / 60}s linear infinite`
-                    : 'none',
-                  justifyContent: sliderWidth <= containerWidth ? 'center' : 'flex-start'
-                }}
-                ref={sliderRef}
-              >
-                {(sliderWidth > containerWidth ? [...categories, ...categories] : categories).map((category, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-black bg-opacity-40 rounded-xl shadow-lg p-4 min-w-[180px] flex flex-col items-center hover:scale-105 transition-transform duration-300 cursor-pointer"
-                    onClick={() => setFilters(prev => ({ ...prev, category }))}
-                  >
-                    <span className="text-4xl mb-2">
-                      {category === 'Electronics' ? '💻' :
-                       category === 'Fashion' ? '👕' :
-                       category === 'Home' ? '🏠' :
-                       category === 'Sports' ? '⚽' :
-                       category === 'Books' ? '📚' :
-                       category === 'Beauty' ? '💄' :
-                       category === 'Toys' ? '🎮' :
-                       category === 'Health' ? '💊' : '🏷️'}
-                    </span>
-                    <span className="text-cyan-200 font-semibold">
-                      {category}
-                    </span>
-                  </div>
-                ))}
               </div>
             </div>
           </section>
