@@ -4,11 +4,11 @@ import { v2 as cloudinary } from 'cloudinary';
 import { Purchase } from "../models/purchase.model.js"; // Import the Purchase model for handling purchases
 
 const createItem = async (req, res) => {
-    const sellerId=req.sellerId
-    const { name, description, price } = req.body;
+    const sellerId = req.sellerId;
+    const { name, description, price, category } = req.body;
     try {
         // Validate input
-        if (!name || !description || !price) {
+        if (!name || !description || !price || !category) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
@@ -38,6 +38,7 @@ const createItem = async (req, res) => {
             name,
             description,
             price,
+            category,
             image: {
                 public_id: cloud_response.public_id, // Use the public_id from Cloudinary response
                 url: cloud_response.secure_url, // Use the secure_url from Cloudinary response
@@ -58,8 +59,8 @@ const createItem = async (req, res) => {
 
 const updateItem = async (req, res) => {
     const { itemId } = req.params; // Use req.params for itemId
-    const sellerId  = req.sellerId; // Ensure sellerId is present (adjust as per your middleware)
-    const { name, description, price, image } = req.body;
+    const sellerId = req.sellerId; // Ensure sellerId is present (adjust as per your middleware)
+    const { name, description, price, category } = req.body;
 
     // console.log("Update Item Request Body:", sellerId, itemId); // Debugging line
     if (!itemId || !sellerId) {
@@ -71,7 +72,7 @@ const updateItem = async (req, res) => {
     if (name !== undefined) updateFields.name = name;
     if (description !== undefined) updateFields.description = description;
     if (price !== undefined) updateFields.price = price;
-    if (image !== undefined) updateFields.image = image;
+    if (category !== undefined) updateFields.category = category;
 
     try {
         const updatedItem = await item.findOneAndUpdate(
@@ -103,13 +104,36 @@ const deleteItem = async (req,res)=>{
         res.status(201).json({message:"Item deleted successfully", item:deletedItem});
     } catch (error) {
         console.log("Error in item Deletion", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 }
 
 const getItems = async (req, res) => {
     try {
-        // Retrieve all items from the database
-        const items = await item.find();
+        const { category, minPrice, maxPrice, search } = req.query;
+        let query = {};
+
+        // Add category filter
+        if (category) {
+            query.category = category;
+        }
+
+        // Add price range filter
+        if (minPrice || maxPrice) {
+            query.price = {};
+            if (minPrice) query.price.$gte = Number(minPrice);
+            if (maxPrice) query.price.$lte = Number(maxPrice);
+        }
+
+        // Add search filter
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const items = await item.find(query);
 
         if (!items || items.length === 0) {
             return res.status(404).json({ error: "No items found" });
@@ -189,4 +213,15 @@ const buyItem = async (req, res) => {
     
 };  
 
-export {getItemsOfSeller,buyItem,itemDetails,getItems,deleteItem,createItem,updateItem};
+const getCategories = async (req, res) => {
+    try {
+        // Get unique categories from items
+        const categories = await item.distinct('category');
+        res.status(200).json({ categories });
+    } catch (error) {
+        console.error("Error retrieving categories:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export {getItemsOfSeller,buyItem,itemDetails,getItems,deleteItem,createItem,updateItem,getCategories};

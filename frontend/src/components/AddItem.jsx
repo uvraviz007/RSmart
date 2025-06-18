@@ -7,8 +7,22 @@ function AddItem() {
     name: "",
     description: "",
     price: "",
+    category: "",
     image: null,
   });
+
+  // Predefined categories from item model
+  const categories = [
+    'Electronics',
+    'Fashion',
+    'Home',
+    'Sports',
+    'Books',
+    'Beauty',
+    'Toys',
+    'Health'
+  ];
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -33,6 +47,7 @@ function AddItem() {
       formData.append("name", form.name);
       formData.append("description", form.description);
       formData.append("price", form.price);
+      formData.append("category", form.category);
       if (form.image) formData.append("image", form.image);
 
       const res = await fetch("http://localhost:5000/api/item/create", {
@@ -46,7 +61,7 @@ function AddItem() {
         setError(data.error || "Failed to add item");
       } else {
         setMessage("Item added successfully!");
-        setForm({ name: "", description: "", price: "", image: null });
+        setForm({ name: "", description: "", price: "", category: "", image: null });
         setTimeout(() => navigate("/"), 1500);
       }
     } catch (err) {
@@ -112,6 +127,25 @@ function AddItem() {
                 />
                 <label className={`absolute left-4 transition-all duration-200 pointer-events-none ${form.price ? "-top-4 text-xs bg-black text-gray-400 px-1" : "top-2 text-base text-gray-400"} peer-focus:-top-4 peer-focus:text-xs peer-focus:bg-black peer-focus:px-1`}>
                   Price
+                </label>
+              </div>
+              <div className="relative">
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="peer w-full px-4 py-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  required
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+                <label className="absolute left-4 -top-4 text-xs bg-black text-gray-400 px-1">
+                  Category
                 </label>
               </div>
               <div className="relative">
