@@ -20,6 +20,10 @@ const purchaseSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    shippingAddress: {
+        type: Object,
+        required: true
+    },
     date: {
         type: Date,
         default: Date.now

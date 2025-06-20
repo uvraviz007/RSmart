@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import itemRoute from './routes/item.route.js'
 import userRoute from './routes/user.route.js'
+import cartRoute from './routes/cart.route.js'
 // import adminRoute from './routes/admin.route.js'
 import { v2 as cloudinary } from 'cloudinary';
 import fileUpload from 'express-fileupload';
@@ -38,6 +39,7 @@ app.use(cors({
 }))
 app.use('/api/item',itemRoute)
 app.use('/api/user',userRoute)
+app.use('/api/cart',cartRoute)
 // app.use('/api/v1/admins',adminRoute)
 
 cloudinary.config({ 
