@@ -18,6 +18,12 @@ const itemSchema = new mongoose.Schema({
         required: true,
         enum: ['Electronics', 'Fashion', 'Home', 'Sports', 'Books', 'Beauty', 'Toys', 'Health']
     },
+    count: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
+    },
     image: {
         public_id: {
             type: String,

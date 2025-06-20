@@ -214,21 +214,30 @@ const getSellers = async (req, res) => {
 const getAllPurchases = async (req,res) => {
     const userId=req.userId;
     try {
-        const purchase=await Purchase.find({userId})
+        const purchases=await Purchase.find({userId})
 
         let purchasedItemId=[]
-        for(let i=0;i<purchase.length;i++){
-            purchasedItemId.push(purchase[i].itemId)  
+        for(let i=0;i<purchases.length;i++){
+            purchasedItemId.push(purchases[i].itemId)  
         }
 
-        const itemData=await item.find({
-            _id: {$in:purchasedItemId}
-        })
-        console.log(itemData);
-        res.status(200).json({purchases: purchase, items: itemData})
+        let itemData = [];
+        if (purchasedItemId.length > 0) {
+            itemData = await item.find({
+                _id: {$in:purchasedItemId}
+            });
+        }
+        
+        console.log("Purchases:", purchases);
+        console.log("Items:", itemData);
+        
+        res.status(200).json({
+            purchases: purchases || [], 
+            items: itemData || []
+        });
     } catch (error) {
         console.log("Error in Purchase", error);
-        res.status(500).json({errors: "Error in Purchase"})
+        res.status(500).json({error: "Error in Purchase"})
     }
 }
 

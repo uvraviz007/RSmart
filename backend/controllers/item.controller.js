@@ -5,15 +5,20 @@ import { Purchase } from "../models/purchase.model.js"; // Import the Purchase m
 
 const createItem = async (req, res) => {
     const sellerId = req.sellerId;
-    const { name, description, price, category } = req.body;
+    const { name, description, price, category, count } = req.body;
     try {
         // Validate input
-        if (!name || !description || !price || !category) {
+        if (!name || !description || !price || !category || count === undefined) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
         if (!req.files || !req.files.image) {
             return res.status(400).json({ error: "Image file is required" });
+        }
+
+        // Validate count
+        if (count < 0) {
+            return res.status(400).json({ error: "Count must be a non-negative number" });
         }
 
         const image = req.files.image.tempFilePath;
@@ -39,6 +44,7 @@ const createItem = async (req, res) => {
             description,
             price,
             category,
+            count,
             image: {
                 public_id: cloud_response.public_id, // Use the public_id from Cloudinary response
                 url: cloud_response.secure_url, // Use the secure_url from Cloudinary response
@@ -60,7 +66,7 @@ const createItem = async (req, res) => {
 const updateItem = async (req, res) => {
     const { itemId } = req.params; // Use req.params for itemId
     const sellerId = req.sellerId; // Ensure sellerId is present (adjust as per your middleware)
-    const { name, description, price, category } = req.body;
+    const { name, description, price, category, count } = req.body;
 
     // console.log("Update Item Request Body:", sellerId, itemId); // Debugging line
     if (!itemId || !sellerId) {
@@ -73,6 +79,12 @@ const updateItem = async (req, res) => {
     if (description !== undefined) updateFields.description = description;
     if (price !== undefined) updateFields.price = price;
     if (category !== undefined) updateFields.category = category;
+    if (count !== undefined) {
+        if (count < 0) {
+            return res.status(400).json({ error: "Count must be a non-negative number" });
+        }
+        updateFields.count = count;
+    }
 
     try {
         const updatedItem = await item.findOneAndUpdate(
@@ -153,11 +165,11 @@ const getItemsOfSeller= async (req, res) => {
         // Retrieve all items created by the seller
         const items = await item.find({ creatorId: sellerId });
 
-        if (!items || items.length === 0) {
-            return res.status(404).json({ error: "No items found for this seller" });
-        }
-
-        res.status(200).json({ message: "Items retrieved successfully", items });
+        // Return empty array if no items found (this is normal for new sellers)
+        res.status(200).json({ 
+            message: "Items retrieved successfully", 
+            items: items || [] 
+        });
     } catch (error) {
         console.error("Error retrieving seller's items:", error);
         res.status(500).json({ error: "Internal server error" });
@@ -185,7 +197,7 @@ const itemDetails = async (req, res) => {
 const buyItem = async (req, res) => {
     // console.log("Buying item...");
     const { itemId } = req.params;
-    const {count}= req.body;
+    const {count} = req.body;
     try {
         // Find the item by ID
         const itemToBuy = await item.findById(itemId);  
@@ -194,7 +206,22 @@ const buyItem = async (req, res) => {
         }      
 
         const purchaseCount = count || 1;
+        
+        // Check if enough stock is available
+        if (itemToBuy.count < purchaseCount) {
+            return res.status(400).json({ 
+                error: `Insufficient stock. Available: ${itemToBuy.count}, Requested: ${purchaseCount}` 
+            });
+        }
+
         const totalPrice = itemToBuy.price * purchaseCount;
+
+        // Update the item count
+        const updatedItem = await item.findByIdAndUpdate(
+            itemId,
+            { $inc: { count: -purchaseCount } },
+            { new: true }
+        );
 
         const newPurchase = new Purchase({
             userId: req.userId, // Assuming user ID is stored in req.user
@@ -205,7 +232,12 @@ const buyItem = async (req, res) => {
 
         await newPurchase.save();
         
-        res.status(200).json({ message: "Item purchased successfully", item: itemToBuy });
+        res.status(200).json({ 
+            message: "Item purchased successfully", 
+            item: updatedItem,
+            purchasedCount: purchaseCount,
+            totalPrice: totalPrice
+        });
     } catch (error) {
         console.error("Error buying item:", error);
         return res.status(500).json({ error: "Internal server error" });

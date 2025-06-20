@@ -52,7 +52,7 @@ function Profile() {
     <div className="bg-gradient-to-r from-black via-blue-950 to-cyan-700 min-h-screen">
       <div className="text-white container mx-auto">
         <Navbar />
-        <div className="flex flex-col items-center justify-center min-h-[80vh]">
+        <div className="flex flex-col items-center justify-center min-h-[80vh] py-8">
           <div className="bg-black bg-opacity-60 p-8 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-2xl font-bold text-cyan-400 mb-6 text-center">
               Profile Details
@@ -125,9 +125,29 @@ function Profile() {
 
               {userData.isSeller && (
                 <div className="mt-4 p-3 bg-cyan-900 bg-opacity-30 rounded-lg border border-cyan-400">
-                  <p className="text-cyan-400 text-center">
+                  <p className="text-cyan-400 text-center mb-4">
                     You have seller privileges. You can add and manage items for sale.
                   </p>
+                  <button
+                    onClick={() => navigate("/my-listed-items")}
+                    className="w-full bg-cyan-400 text-black py-2 rounded-lg font-semibold hover:bg-cyan-300 transition"
+                  >
+                    View My Listed Items
+                  </button>
+                </div>
+              )}
+
+              {!userData.isSeller && (
+                <div className="mt-4 p-3 bg-blue-900 bg-opacity-30 rounded-lg border border-blue-400">
+                  <p className="text-blue-400 text-center mb-4">
+                    You have buyer privileges. You can view your purchase history.
+                  </p>
+                  <button
+                    onClick={() => navigate("/purchase-history")}
+                    className="w-full bg-blue-400 text-black py-2 rounded-lg font-semibold hover:bg-blue-300 transition"
+                  >
+                    View Purchase History
+                  </button>
                 </div>
               )}
             </div>
