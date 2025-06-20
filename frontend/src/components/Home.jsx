@@ -1,9 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import ItemModal from "./ItemModal";
-import { FaHeart, FaRegHeart } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
 
 function Home() {
   const sliderRef = useRef(null);
@@ -19,9 +16,6 @@ function Home() {
     maxPrice: "",
     search: ""
   });
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [wishlist, setWishlist] = useState([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch categories from backend
@@ -37,22 +31,6 @@ function Home() {
     };
 
     fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    // Fetch user's wishlist
-    const fetchWishlist = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/user/wishlist", { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setWishlist(data.wishlist.map(item => item._id));
-        }
-      } catch (err) {
-        console.error("Error fetching wishlist:", err);
-      }
-    };
-    fetchWishlist();
   }, []);
 
   useEffect(() => {
@@ -110,62 +88,6 @@ function Home() {
       }
     } else {
       setFilters(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleToggleWishlist = async (itemId) => {
-    try {
-        const res = await fetch('http://localhost:5000/api/user/wishlist/toggle', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ itemId }),
-        });
-        if (res.ok) {
-            const data = await res.json();
-            setWishlist(data.wishlist.map(item => item._id));
-        }
-    } catch (err) {
-        console.error("Error updating wishlist:", err);
-    }
-  };
-
-  const handleAddToCart = async (itemId, quantity) => {
-    try {
-        const res = await fetch('http://localhost:5000/api/cart/add', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ itemId, quantity }),
-        });
-        if (res.ok) {
-            alert('Item added to cart!');
-        } else {
-            const data = await res.json();
-            alert(`Error: ${data.error}`);
-        }
-    } catch (err) {
-        console.error("Error adding to cart:", err);
-    }
-  };
-
-  const handleBuyNow = async (itemId, quantity) => {
-    try {
-        const res = await fetch('http://localhost:5000/api/cart/add', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ itemId, quantity }),
-        });
-        if (res.ok) {
-            // On successful add to cart, redirect to the cart page
-            navigate('/cart');
-        } else {
-            const data = await res.json();
-            alert(`Error: ${data.error}`);
-        }
-    } catch (err) {
-        console.error("Error in Buy Now flow:", err);
     }
   };
 
@@ -284,57 +206,30 @@ function Home() {
             ) : error ? (
               <div className="text-red-400 text-center">{error}</div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {products.map((item) => (
-                  <div 
-                    key={item._id} 
-                    className="bg-black bg-opacity-60 rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 flex flex-col"
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+                {products.map((product) => (
+                  <div
+                    key={product._id}
+                    className="bg-black bg-opacity-40 rounded-xl shadow-lg p-4 hover:scale-105 transition-transform duration-300"
                   >
-                    <div 
-                      className="cursor-pointer"
-                      onClick={() => item.count > 0 && setSelectedItem(item)}
-                    >
-                      <img
-                        src={item.image.url}
-                        alt={item.name}
-                        className={`w-full h-48 object-cover ${item.count === 0 ? 'opacity-50' : ''}`}
-                      />
+                    <img
+                      src={product.image.url}
+                      alt={product.name}
+                      className="rounded-lg mb-4 w-full h-48 object-cover"
+                    />
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-cyan-300">{product.category}</span>
+                      <span className="text-cyan-400 font-bold">₹{product.price}</span>
                     </div>
-                    
-                    <div className="px-4 py-2 flex justify-between items-center">
-                      {item.count === 0 ? (
-                        <span className="text-red-500 font-semibold text-sm">Out of Stock</span>
-                      ) : (
-                        <span></span> // Placeholder
-                      )}
-                      <button onClick={() => handleToggleWishlist(item._id)} className="text-red-500 hover:text-red-400">
-                        {wishlist.includes(item._id) ? <FaHeart size={22}/> : <FaRegHeart size={22}/>}
-                      </button>
-                    </div>
-
-                    <div className="p-4 flex-grow">
-                      <h4 className="text-lg font-bold text-cyan-300 truncate">{item.name}</h4>
-                      <p className="text-gray-400 text-sm mb-2">{item.category}</p>
-                      <p className="text-xl font-semibold text-white">₹{item.price.toFixed(2)}</p>
-                    </div>
-
-                    <div className="p-4 border-t border-gray-700">
-                       {item.count > 0 ? (
-                        <button 
-                          onClick={() => handleAddToCart(item._id, 1)}
-                          className="w-full bg-cyan-500 text-black px-4 py-2 rounded-lg font-semibold hover:bg-cyan-400 transition text-sm"
-                        >
-                          Add to Cart
-                        </button>
-                      ) : (
-                        <button 
-                          className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold cursor-not-allowed text-sm"
-                          disabled
-                        >
-                          Out of Stock
-                        </button>
-                      )}
-                    </div>
+                    <h4 className="text-xl font-semibold text-cyan-200 mb-2">
+                      {product.name}
+                    </h4>
+                    <p className="text-gray-300 mb-2 line-clamp-2">
+                      {product.description}
+                    </p>
+                    <button className="w-full bg-cyan-400 text-black px-4 py-2 rounded hover:bg-cyan-300 transition">
+                      Buy Now
+                    </button>
                   </div>
                 ))}
               </div>
@@ -342,14 +237,6 @@ function Home() {
           </section>
         </div>
         <Footer />
-        <ItemModal 
-            item={selectedItem}
-            onClose={() => setSelectedItem(null)}
-            onAddToCart={handleAddToCart}
-            onBuyNow={handleBuyNow}
-            onToggleWishlist={handleToggleWishlist}
-            isWishlisted={selectedItem && wishlist.includes(selectedItem._id)}
-        />
         <style>
           {`
             @keyframes slide-circular {

@@ -214,19 +214,26 @@ const getSellers = async (req, res) => {
 const getAllPurchases = async (req,res) => {
     const userId=req.userId;
     try {
-        const purchases = await Purchase.find({ userId })
-            .populate({
-                path: 'itemId',
-                populate: {
-                    path: 'creatorId',
-                    model: 'user',
-                    select: 'firstName secondName' 
-                }
-            })
-            .sort({ date: -1 });
+        const purchases=await Purchase.find({userId})
 
+        let purchasedItemId=[]
+        for(let i=0;i<purchases.length;i++){
+            purchasedItemId.push(purchases[i].itemId)  
+        }
+
+        let itemData = [];
+        if (purchasedItemId.length > 0) {
+            itemData = await item.find({
+                _id: {$in:purchasedItemId}
+            });
+        }
+        
+        console.log("Purchases:", purchases);
+        console.log("Items:", itemData);
+        
         res.status(200).json({
-            purchases: purchases || [],
+            purchases: purchases || [], 
+            items: itemData || []
         });
     } catch (error) {
         console.log("Error in Purchase", error);
@@ -272,58 +279,4 @@ const checkLoginStatus = (req, res) => {
     res.status(401).json({ loggedIn: false });
 };
 
-const getWishlist = async (req, res) => {
-    try {
-        const user = await User.findById(req.userId).populate('wishlist');
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-        res.status(200).json({ wishlist: user.wishlist });
-    } catch (error) {
-        console.error("Error getting wishlist:", error);
-        res.status(500).json({ error: "Server error" });
-    }
-};
-
-const toggleWishlist = async (req, res) => {
-    const { itemId } = req.body;
-    const userId = req.userId;
-
-    try {
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        const itemIndex = user.wishlist.indexOf(itemId);
-        if (itemIndex > -1) {
-            // Item exists, remove it
-            user.wishlist.splice(itemIndex, 1);
-        } else {
-            // Add new item
-            user.wishlist.push(itemId);
-        }
-
-        await user.save();
-        const populatedUser = await user.populate('wishlist');
-        res.status(200).json({ message: "Wishlist updated", wishlist: populatedUser.wishlist });
-    } catch (error) {
-        console.error("Error toggling wishlist:", error);
-        res.status(500).json({ error: "Server error" });
-    }
-};
-
-export {
-  signUp,
-  signIn,
-  updateUser,
-  deleteUser,
-  getUsers,
-  getSellers,
-  getAllPurchases,
-  signOut,
-  getDetails,
-  checkLoginStatus,
-  getWishlist,
-  toggleWishlist
-};
+export {getAllPurchases, getDetails, getUsers, getSellers, deleteUser, signUp, signIn, signOut, updateUser, checkLoginStatus };

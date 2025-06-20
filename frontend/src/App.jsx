@@ -8,9 +8,6 @@ import Profile from './components/Profile'
 import AddItem from './components/AddItem' // Assuming you have an AddItem component
 import MyListedItems from './components/MyListedItems'
 import PurchaseHistory from './components/PurchaseHistory'
-import Wishlist from './components/Wishlist'
-import Cart from './components/Cart'
-import BillingAddress from './components/BillingAddress'
 
 function App() {
   return (
@@ -24,9 +21,6 @@ function App() {
         <Route path="/additem" element={<AddItem />} />
         <Route path="/my-listed-items" element={<MyListedItems />} />
         <Route path="/purchase-history" element={<PurchaseHistory />} />
-        <Route path="/wishlist" element={<Wishlist />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/billing-address" element={<BillingAddress />} />
       </Routes>
     </div>
   )

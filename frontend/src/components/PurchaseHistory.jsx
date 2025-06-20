@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import PurchaseDetailModal from "./PurchaseDetailModal";
 
 function PurchaseHistory() {
   const [purchases, setPurchases] = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const [selectedPurchase, setSelectedPurchase] = useState(null);
 
   useEffect(() => {
     const fetchPurchases = async () => {
@@ -17,9 +16,14 @@ function PurchaseHistory() {
         const res = await fetch("http://localhost:5000/api/user/purchases", {
           credentials: "include",
         });
-        if (!res.ok) throw new Error("Failed to fetch purchases");
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch purchases");
+        }
+
         const data = await res.json();
         setPurchases(data.purchases || []);
+        setItems(data.items || []);
       } catch (err) {
         console.error("Error fetching purchases:", err);
         setError("Failed to load your purchase history");
@@ -27,14 +31,23 @@ function PurchaseHistory() {
         setLoading(false);
       }
     };
+
     fetchPurchases();
   }, []);
-  
+
+  // Create a map of items by ID for easy lookup
+  const itemsMap = items.reduce((acc, item) => {
+    acc[item._id] = item;
+    return acc;
+  }, {});
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -66,9 +79,13 @@ function PurchaseHistory() {
             </button>
           </div>
 
-          {error && <div className="text-red-400 p-4">{error}</div>}
+          {error && (
+            <div className="bg-red-900 bg-opacity-30 border border-red-400 text-red-400 p-4 rounded-lg mb-6">
+              {error}
+            </div>
+          )}
 
-          {purchases.length === 0 && !loading ? (
+          {purchases.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-400 text-lg mb-4">No purchases yet</p>
               <button
@@ -79,37 +96,56 @@ function PurchaseHistory() {
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {purchases
-                .filter(purchase => purchase.itemId)
-                .map((purchase) => (
-                <div 
-                    key={purchase._id} 
-                    className="bg-black bg-opacity-60 rounded-lg p-4 flex items-center justify-between hover:border-cyan-400 border-2 border-transparent transition cursor-pointer" 
-                    onClick={() => setSelectedPurchase(purchase)}
-                >
-                  <div className="flex items-center gap-4">
-                    <img src={purchase.itemId.image.url} alt={purchase.itemId.name} className="w-16 h-16 object-cover rounded-md"/>
-                    <div>
-                      <h3 className="text-lg font-semibold text-cyan-300">{purchase.itemId.name}</h3>
-                      <p className="text-sm text-gray-400">Purchased on {formatDate(purchase.date)}</p>
+            <div className="space-y-6">
+              {purchases.map((purchase) => {
+                const item = itemsMap[purchase.itemId];
+                if (!item) return null;
+
+                return (
+                  <div key={purchase._id} className="bg-black bg-opacity-60 rounded-lg p-6 border border-gray-700">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <img
+                        src={item.image.url}
+                        alt={item.name}
+                        className="w-full md:w-48 h-48 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="text-xl font-semibold text-cyan-400 mb-2">{item.name}</h3>
+                        <p className="text-gray-300 mb-4">{item.description}</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div>
+                            <span className="text-gray-400">Quantity:</span>
+                            <p className="text-white font-semibold">{purchase.count}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Price per item:</span>
+                            <p className="text-white font-semibold">${item.price}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Total:</span>
+                            <p className="text-cyan-400 font-bold text-lg">${purchase.totalPrice}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">
+                            Purchased on: {formatDate(purchase.date)}
+                          </span>
+                          <span className="px-3 py-1 bg-green-900 text-green-400 rounded-full text-sm">
+                            Completed
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">₹{purchase.totalPrice.toFixed(2)}</p>
-                    <p className="text-sm text-gray-400">View Details &rarr;</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
       <Footer />
-      <PurchaseDetailModal 
-        purchase={selectedPurchase}
-        onClose={() => setSelectedPurchase(null)}
-      />
     </div>
   );
 }

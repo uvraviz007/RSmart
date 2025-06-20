@@ -27,10 +27,6 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  wishlist: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'item'
-  }]
 });
 
 export const User = mongoose.model("user", userSchema);
