@@ -130,9 +130,6 @@ const updateUser = async (req, res) => {
 
   try {
     const { oldPassword, password, ...updateFields } = req.body;
-    
-    console.log("Received update request:", req.body); // Debug log
-    console.log("Update fields:", updateFields); // Debug log
 
     const existingUser = await User.findById(userId);
     if (!existingUser) return res.status(404).json({ error: "User not found" });
@@ -148,7 +145,6 @@ const updateUser = async (req, res) => {
     }
 
     const validatedData = schema.parse(updateFields);
-    console.log("Validated data:", validatedData); // Debug log
 
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -156,12 +152,10 @@ const updateUser = async (req, res) => {
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, { $set: validatedData }, { new: true, runValidators: true });
-    console.log("Updated user from database:", updatedUser); // Debug log
 
     res.status(200).json({ message: "User updated successfully", user: updatedUser });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log("Zod validation error:", error.errors); // Debug log
       return res.status(400).json({ error: error.errors });
     }
     console.error("Error updating user:", error);

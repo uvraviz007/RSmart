@@ -32,7 +32,6 @@ function Profile() {
         }
 
         const data = await res.json();
-        console.log("User data from server:", data); // Debug log
         setUserData(data.user);
         // Initialize form data with current user data
         setFormData({
@@ -44,7 +43,7 @@ function Profile() {
           confirmPassword: ""
         });
       } catch (err) {
-        console.error("Error fetching user data:", err); // Debug log
+        console.error("Error fetching user data:", err);
         alert("Failed to load profile data");
         navigate("/login");
       }
@@ -129,8 +128,6 @@ function Profile() {
         oldPassword: currentPassword
       };
 
-      console.log("Sending update data to backend:", updateData); // Debug log
-
       // Only include password if user wants to change it
       if (formData.password) {
         updateData.password = formData.password;
@@ -157,9 +154,6 @@ function Profile() {
       }
 
       const data = await res.json();
-      console.log("Updated user data from server:", data.user); // Debug log
-      console.log("userData.lastName value:", data.user.lastName); // Debug log
-      console.log("Full name calculation:", data.user.lastName ? `${data.user.firstName} ${data.user.lastName}` : data.user.firstName); // Debug log
       setUserData(data.user);
       setIsEditing(false);
       setShowPasswordModal(false);
@@ -225,10 +219,6 @@ function Profile() {
       </div>
     );
   }
-
-  // Debug log for user data
-  console.log("Current user data state:", userData);
-  console.log("isSeller value:", userData.isSeller);
 
   return (
     <div className="bg-gradient-to-r from-black via-blue-950 to-cyan-700 min-h-screen">
