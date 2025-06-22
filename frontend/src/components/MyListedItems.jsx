@@ -7,29 +7,47 @@ function MyListedItems() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    count: ""
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editMessage, setEditMessage] = useState("");
   const navigate = useNavigate();
+
+  // Predefined categories from item model
+  const categories = [
+    'Electronics',
+    'Fashion',
+    'Home',
+    'Sports',
+    'Books',
+    'Beauty',
+    'Toys',
+    'Health'
+  ];
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        console.log("Fetching seller items...");
         const res = await fetch("http://localhost:5000/api/item/seller-items", {
           credentials: "include",
         });
-
-        console.log("Response status:", res.status);
         
         if (!res.ok) {
           const errorData = await res.json();
-          console.error("Error response:", errorData);
           throw new Error(errorData.error || "Failed to fetch items");
         }
 
         const data = await res.json();
-        console.log("Fetched data:", data);
         setItems(data.items || []);
       } catch (err) {
-        console.error("Error fetching items:", err);
         setError(err.message || "Failed to load your listed items");
       } finally {
         setLoading(false);
@@ -39,8 +57,77 @@ function MyListedItems() {
     fetchItems();
   }, []);
 
-  const handleEdit = (itemId) => {
-    navigate(`/edit-item/${itemId}`);
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setEditForm({
+      name: item.name,
+      description: item.description,
+      price: item.price.toString(),
+      category: item.category,
+      count: item.count.toString()
+    });
+    setEditError("");
+    setEditMessage("");
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError("");
+    setEditMessage("");
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/item/update/${editingItem._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: editForm.name,
+          description: editForm.description,
+          price: parseFloat(editForm.price),
+          category: editForm.category,
+          count: parseInt(editForm.count)
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update item");
+      }
+
+      setEditMessage("Item updated successfully!");
+      
+      // Update the item in the local state
+      setItems(prevItems => 
+        prevItems.map(item => 
+          item._id === editingItem._id ? data.item : item
+        )
+      );
+
+      // Close modal after a short delay
+      setTimeout(() => {
+        setShowEditModal(false);
+        setEditingItem(null);
+        setEditForm({ name: "", description: "", price: "", category: "", count: "" });
+        setEditMessage("");
+      }, 1500);
+
+    } catch (err) {
+      setEditError(err.message || "Failed to update item");
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handleDelete = async (itemId) => {
@@ -131,7 +218,7 @@ function MyListedItems() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleEdit(item._id)}
+                      onClick={() => handleEdit(item)}
                       className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
                     >
                       Edit
@@ -149,6 +236,141 @@ function MyListedItems() {
           )}
         </div>
       </div>
+
+      {/* Edit Item Modal */}
+      {showEditModal && editingItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-cyan-400">Edit Item</h3>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingItem(null);
+                    setEditForm({ name: "", description: "", price: "", category: "", count: "" });
+                    setEditError("");
+                    setEditMessage("");
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="name"
+                    value={editForm.name}
+                    onChange={handleEditChange}
+                    className="w-full px-4 py-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    required
+                  />
+                  <label className="absolute left-4 -top-4 text-xs bg-gray-800 text-gray-400 px-1">
+                    Name
+                  </label>
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    name="description"
+                    value={editForm.description}
+                    onChange={handleEditChange}
+                    className="w-full px-4 py-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
+                    required
+                    rows={3}
+                  />
+                  <label className="absolute left-4 -top-4 text-xs bg-gray-800 text-gray-400 px-1">
+                    Description
+                  </label>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="price"
+                    value={editForm.price}
+                    onChange={handleEditChange}
+                    className="w-full px-4 py-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    required
+                    min="0"
+                    step="0.01"
+                  />
+                  <label className="absolute left-4 -top-4 text-xs bg-gray-800 text-gray-400 px-1">
+                    Price
+                  </label>
+                </div>
+
+                <div className="relative">
+                  <select
+                    name="category"
+                    value={editForm.category}
+                    onChange={handleEditChange}
+                    className="w-full px-4 py-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    required
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                  <label className="absolute left-4 -top-4 text-xs bg-gray-800 text-gray-400 px-1">
+                    Category
+                  </label>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="count"
+                    value={editForm.count}
+                    onChange={handleEditChange}
+                    className="w-full px-4 py-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    required
+                    min="0"
+                  />
+                  <label className="absolute left-4 -top-4 text-xs bg-gray-800 text-gray-400 px-1">
+                    Stock Count
+                  </label>
+                </div>
+
+                {editError && (
+                  <div className="text-red-400 text-center text-sm">{editError}</div>
+                )}
+                {editMessage && (
+                  <div className="text-cyan-400 text-center text-sm">{editMessage}</div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingItem(null);
+                      setEditForm({ name: "", description: "", price: "", category: "", count: "" });
+                      setEditError("");
+                      setEditMessage("");
+                    }}
+                    className="flex-1 bg-gray-600 text-white py-2 rounded-lg font-semibold hover:bg-gray-500 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    className="flex-1 bg-cyan-400 text-black py-2 rounded-lg font-semibold hover:bg-cyan-300 transition disabled:opacity-50"
+                  >
+                    {editLoading ? "Updating..." : "Update Item"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaTimes, FaHeart, FaRegHeart } from 'react-icons/fa';
 
-function ItemModal({ item, onClose, onAddToCart, onBuyNow, onToggleWishlist, isWishlisted }) {
+function ItemModal({ item, onClose, onAddToCart, onBuyNow, onToggleWishlist, isWishlisted, userData }) {
   const [quantity, setQuantity] = useState(1);
 
   if (!item) return null;
@@ -39,47 +39,49 @@ function ItemModal({ item, onClose, onAddToCart, onBuyNow, onToggleWishlist, isW
                     In Stock: {item.count}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                  <label htmlFor="quantity" className="text-gray-400">Quantity:</label>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))} 
-                      disabled={quantity <= 1} 
-                      className="bg-gray-700 w-8 h-8 rounded font-bold text-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      id="quantity"
-                      value={quantity}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/[^0-9]/g, '');
-                        if (val === '') {
-                          setQuantity('');
-                        } else {
-                          const num = Math.min(Number(val), item.count);
-                          setQuantity(num);
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === '' || Number(e.target.value) < 1) {
-                          setQuantity(1);
-                        }
-                      }}
-                      className="bg-gray-800 text-white px-3 py-1 rounded w-16 text-center focus:outline-none focus:ring-2 focus:ring-cyan-400 h-8"
-                      disabled={item.count === 0}
-                    />
-                    <button 
-                      onClick={() => setQuantity(q => Math.min(item.count, (Number(q) || 0) + 1))} 
-                      disabled={quantity >= item.count} 
-                      className="bg-gray-700 w-8 h-8 rounded font-bold text-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      +
-                    </button>
+                {!userData?.isSeller && (
+                  <div className="flex items-center gap-4 mb-4">
+                    <label htmlFor="quantity" className="text-gray-400">Quantity:</label>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                        disabled={quantity <= 1} 
+                        className="bg-gray-700 w-8 h-8 rounded font-bold text-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        id="quantity"
+                        value={quantity}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, '');
+                          if (val === '') {
+                            setQuantity('');
+                          } else {
+                            const num = Math.min(Number(val), item.count);
+                            setQuantity(num);
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value === '' || Number(e.target.value) < 1) {
+                            setQuantity(1);
+                          }
+                        }}
+                        className="bg-gray-800 text-white px-3 py-1 rounded w-16 text-center focus:outline-none focus:ring-2 focus:ring-cyan-400 h-8"
+                        disabled={item.count === 0}
+                      />
+                      <button 
+                        onClick={() => setQuantity(q => Math.min(item.count, (Number(q) || 0) + 1))} 
+                        disabled={quantity >= item.count} 
+                        className="bg-gray-700 w-8 h-8 rounded font-bold text-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               <div className="text-center my-8">
@@ -88,28 +90,34 @@ function ItemModal({ item, onClose, onAddToCart, onBuyNow, onToggleWishlist, isW
               </div>
             )}
 
-            <div className="flex gap-4 mt-auto">
-              <button
-                onClick={handleBuyNow}
-                className="flex-1 bg-cyan-400 text-black font-bold py-2 rounded hover:bg-cyan-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={item.count === 0 || quantity > item.count || quantity < 1}
-              >
-                Buy Now
-              </button>
-              <button
-                onClick={handleAddToCart}
-                className="flex-1 bg-gray-700 text-white font-bold py-2 rounded hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={item.count === 0 || quantity > item.count || quantity < 1}
-              >
-                Add to Cart
-              </button>
-              <button
-                onClick={() => onToggleWishlist(item._id)}
-                className="p-2 text-red-500 hover:text-red-400"
-              >
-                {isWishlisted ? <FaHeart size={24} /> : <FaRegHeart size={24} />}
-              </button>
-            </div>
+            {!userData?.isSeller ? (
+              <div className="flex gap-4 mt-auto">
+                <button
+                  onClick={handleBuyNow}
+                  className="flex-1 bg-cyan-400 text-black font-bold py-2 rounded hover:bg-cyan-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={item.count === 0 || quantity > item.count || quantity < 1}
+                >
+                  Buy Now
+                </button>
+                <button
+                  onClick={handleAddToCart}
+                  className="flex-1 bg-gray-700 text-white font-bold py-2 rounded hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={item.count === 0 || quantity > item.count || quantity < 1}
+                >
+                  Add to Cart
+                </button>
+                <button
+                  onClick={() => onToggleWishlist(item._id)}
+                  className="p-2 text-red-500 hover:text-red-400"
+                >
+                  {isWishlisted ? <FaHeart size={24} /> : <FaRegHeart size={24} />}
+                </button>
+              </div>
+            ) : (
+              <div className="mt-auto text-center">
+                <p className="text-gray-400 text-sm">Seller View - No purchase options available</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

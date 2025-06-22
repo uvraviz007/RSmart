@@ -13,6 +13,7 @@ function Home() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userData, setUserData] = useState(null);
   const [filters, setFilters] = useState({
     category: "",
     minPrice: "",
@@ -22,6 +23,25 @@ function Home() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Fetch user data
+    const fetchUserData = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/user/me", {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUserData(data.user);
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     // Fetch categories from backend
@@ -40,8 +60,10 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    // Fetch user's wishlist
+    // Fetch user's wishlist only if user is not a seller
     const fetchWishlist = async () => {
+      if (userData?.isSeller) return; // Don't fetch wishlist for sellers
+      
       try {
         const res = await fetch("http://localhost:5000/api/user/wishlist", { credentials: 'include' });
         if (res.ok) {
@@ -53,7 +75,7 @@ function Home() {
       }
     };
     fetchWishlist();
-  }, []);
+  }, [userData]);
 
   useEffect(() => {
     // Fetch products with filters
@@ -307,9 +329,11 @@ function Home() {
                       ) : (
                         <span></span> // Placeholder
                       )}
-                      <button onClick={() => handleToggleWishlist(item._id)} className="text-red-500 hover:text-red-400">
-                        {wishlist.includes(item._id) ? <FaHeart size={22}/> : <FaRegHeart size={22}/>}
-                      </button>
+                      {!userData?.isSeller && (
+                        <button onClick={() => handleToggleWishlist(item._id)} className="text-red-500 hover:text-red-400">
+                          {wishlist.includes(item._id) ? <FaHeart size={22}/> : <FaRegHeart size={22}/>}
+                        </button>
+                      )}
                     </div>
 
                     <div className="p-4 flex-grow">
@@ -319,20 +343,26 @@ function Home() {
                     </div>
 
                     <div className="p-4 border-t border-gray-700">
-                       {item.count > 0 ? (
-                        <button 
-                          onClick={() => handleAddToCart(item._id, 1)}
-                          className="w-full bg-cyan-500 text-black px-4 py-2 rounded-lg font-semibold hover:bg-cyan-400 transition text-sm"
-                        >
-                          Add to Cart
-                        </button>
+                      {!userData?.isSeller ? (
+                        item.count > 0 ? (
+                          <button 
+                            onClick={() => handleAddToCart(item._id, 1)}
+                            className="w-full bg-cyan-500 text-black px-4 py-2 rounded-lg font-semibold hover:bg-cyan-400 transition text-sm"
+                          >
+                            Add to Cart
+                          </button>
+                        ) : (
+                          <button 
+                            className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold cursor-not-allowed text-sm"
+                            disabled
+                          >
+                            Out of Stock
+                          </button>
+                        )
                       ) : (
-                        <button 
-                          className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold cursor-not-allowed text-sm"
-                          disabled
-                        >
-                          Out of Stock
-                        </button>
+                        <div className="text-center text-gray-400 text-sm">
+                          Seller View
+                        </div>
                       )}
                     </div>
                   </div>
@@ -349,6 +379,7 @@ function Home() {
             onBuyNow={handleBuyNow}
             onToggleWishlist={handleToggleWishlist}
             isWishlisted={selectedItem && wishlist.includes(selectedItem._id)}
+            userData={userData}
         />
         <style>
           {`
