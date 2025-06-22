@@ -5,7 +5,7 @@ function PurchaseDetailModal({ purchase, onClose }) {
     if (!purchase) return null;
 
     const { itemId: item, count, totalPrice, date, shippingAddress } = purchase;
-    const sellerName = item.creatorId ? `${item.creatorId.firstName} ${item.creatorId.secondName || ''}`.trim() : 'N/A';
+    const sellerName = item.creatorId ? `${item.creatorId.firstName} ${item.creatorId.lastName || ''}`.trim() : 'N/A';
     
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">

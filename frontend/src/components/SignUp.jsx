@@ -45,7 +45,7 @@ function SignUp() {
 
     const userData = {
       firstName: form.firstName,
-      secondName: form.lastName,
+      lastName: form.lastName,
       email: form.email,
       password: form.password,
       mobile: mobileNumber,

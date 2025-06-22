@@ -12,7 +12,7 @@ const userSchema = z.object({
     firstName: z.string().min(3, "First name is required & atleast of 3 characters"),
     lastName: z.string().optional(),
     email: z.string().email("Invalid email address"),
-    mobile: z.string().regex(/^\d{10}$/, "Mobile number must be 10 digits"),
+    mobile: z.number().int().positive("Mobile number must be a positive integer"),
     password: z.string().min(8, "Password must be at least 8 characters long")
         .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, "Password must include one uppercase letter, one lowercase letter, one digit, and one special character"),
 });
@@ -130,6 +130,9 @@ const updateUser = async (req, res) => {
 
   try {
     const { oldPassword, password, ...updateFields } = req.body;
+    
+    console.log("Received update request:", req.body); // Debug log
+    console.log("Update fields:", updateFields); // Debug log
 
     const existingUser = await User.findById(userId);
     if (!existingUser) return res.status(404).json({ error: "User not found" });
@@ -145,6 +148,7 @@ const updateUser = async (req, res) => {
     }
 
     const validatedData = schema.parse(updateFields);
+    console.log("Validated data:", validatedData); // Debug log
 
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -152,10 +156,12 @@ const updateUser = async (req, res) => {
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, { $set: validatedData }, { new: true, runValidators: true });
+    console.log("Updated user from database:", updatedUser); // Debug log
 
     res.status(200).json({ message: "User updated successfully", user: updatedUser });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.log("Zod validation error:", error.errors); // Debug log
       return res.status(400).json({ error: error.errors });
     }
     console.error("Error updating user:", error);
@@ -220,7 +226,7 @@ const getAllPurchases = async (req,res) => {
                 populate: {
                     path: 'creatorId',
                     model: 'user',
-                    select: 'firstName secondName' 
+                    select: 'firstName lastName' 
                 }
             })
             .sort({ date: -1 });
