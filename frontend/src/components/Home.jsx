@@ -330,8 +330,14 @@ function Home() {
                         <span></span> // Placeholder
                       )}
                       {!userData?.isSeller && (
-                        <button onClick={() => handleToggleWishlist(item._id)} className="text-red-500 hover:text-red-400">
-                          {wishlist.includes(item._id) ? <FaHeart size={22}/> : <FaRegHeart size={22}/>}
+                        <button 
+                          onClick={() => handleToggleWishlist(item._id)} 
+                          className="p-2 rounded-full transition duration-300 hover:cursor-pointer group"
+                        >
+                          {wishlist.includes(item._id) ? 
+                            <FaHeart className="text-red-500 group-hover:text-red-500 transition-colors duration-300" size={22}/> : 
+                            <FaRegHeart className="text-white group-hover:text-red-500 transition-colors duration-300" size={22}/>
+                          }
                         </button>
                       )}
                     </div>

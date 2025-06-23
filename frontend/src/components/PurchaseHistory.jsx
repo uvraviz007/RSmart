@@ -60,7 +60,7 @@ function PurchaseHistory() {
             <h1 className="text-3xl font-bold text-cyan-400">Purchase History</h1>
             <button
               onClick={() => navigate("/")}
-              className="bg-cyan-400 text-black px-6 py-2 rounded-lg font-semibold hover:bg-cyan-300 transition"
+              className="bg-cyan-400 hover:cursor-pointer text-black px-6 py-2 rounded-lg font-semibold hover:bg-cyan-300 transition"
             >
               Continue Shopping
             </button>

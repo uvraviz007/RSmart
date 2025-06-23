@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import logo from "../logo/RSmart.png";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import logo from "../logo/RSmart.png";
 import { FaHeart, FaShoppingCart } from 'react-icons/fa';
 
 function Navbar() {
@@ -16,129 +16,105 @@ function Navbar() {
         const res = await fetch("http://localhost:5000/api/user/me", {
           credentials: "include",
         });
-
         if (res.ok) {
           const data = await res.json();
           setIsLoggedIn(true);
           setUserData(data.user);
-          // Fetch cart count if user is a buyer
-          if (!data.user.isSeller) {
-            fetchCartCount();
-          }
+          if (!data.user.isSeller) fetchCartCount();
         } else {
           setIsLoggedIn(false);
           setUserData(null);
         }
       } catch (err) {
-        console.error("Error fetching user data:", err);
         setIsLoggedIn(false);
         setUserData(null);
       }
     };
-    
     const fetchCartCount = async () => {
-        try {
-            const res = await fetch("http://localhost:5000/api/cart", { credentials: 'include' });
-            if(res.ok) {
-                const data = await res.json();
-                setCartCount(data.cart?.items?.length || 0);
-            }
-        } catch (err) {
-            console.error("Error fetching cart count:", err);
+      try {
+        const res = await fetch("http://localhost:5000/api/cart", { credentials: 'include' });
+        if(res.ok) {
+          const data = await res.json();
+          setCartCount(data.cart?.items?.length || 0);
         }
+      } catch {}
     };
-
     fetchUserData();
-
-    const handleStorageChange = () => {
-        fetchUserData();
-    };
-
+    const handleStorageChange = () => fetchUserData();
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('cartUpdated', fetchCartCount);
-
     return () => {
-        window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('cartUpdated', fetchCartCount);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cartUpdated', fetchCartCount);
     };
   }, [location.pathname]);
 
-  const handleProfile = () => {
-    navigate("/profile");
-  };
+  const handleProfileClick = () => navigate("/profile");
+  const isHomePage = location.pathname === "/";
 
-  // Detect if on login or signup page
-  const isAuthPage =
-    location.pathname === "/login" || location.pathname === "/signup";
-
-  const isProfilePage = location.pathname === "/profile";
+  // Auth pages
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
 
   return (
     <header className="flex items-center justify-between py-4">
-      <div className="flex items-center gap-1">
-        <Link to="/">
-          <img src={logo} alt="" className="h-15 w-20" />
-        </Link>
-      </div>
+      <Link to="/" className="flex items-center gap-1">
+        <img src={logo} alt="RSmart Logo" className="h-15 w-20" />
+      </Link>
       <div className="flex items-center gap-4">
-        {isLoggedIn ? (
-          isProfilePage ? (
-              <Link
-                to="/"
-                className="bg-transparent text-white px-4 py-2 border border-white transition duration-300
-                hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
-              >
-                Home
-              </Link>
-          ) : userData?.isSeller ? (
-              <button
-                onClick={handleProfile}
-                className="bg-transparent text-white px-4 py-2 border border-white transition duration-300 cursor-pointer
-                  hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
-              >
-                Profile
-              </button>
-          ) : (
-            <>
-              <Link to="/wishlist" className="relative text-white p-2 hover:text-cyan-400">
-                <FaHeart size={24} />
-              </Link>
-              <Link to="/cart" className="relative text-white p-2 hover:text-cyan-400">
-                <FaShoppingCart size={24} />
-                {cartCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
-              <button
-                onClick={handleProfile}
-                className="bg-transparent text-white px-4 py-2 border border-white transition duration-300 cursor-pointer
-                  hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
-              >
-                Profile
-              </button>
-            </>
-          )
-        ) : isAuthPage ? (
-          <>
-            <Link
-              to="/"
-              className="bg-transparent text-white px-4 py-2 border border-white transition duration-300
-              hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
-            >
-              Home
-            </Link>
-          </>
+        {/* Auth page: only show Home button on right */}
+        {isAuthPage ? (
+          <Link
+            to="/"
+            className="bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300 hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
+          >
+            Home
+          </Link>
         ) : (
           <>
-            <Link
-              to="/login"
-              className="bg-transparent text-white px-4 py-2 border border-white transition duration-300
-                hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
-            >
-              Login/Register
-            </Link>
+            {/* Left side: Wishlist/Cart for buyers only */}
+            {isLoggedIn && userData && !userData.isSeller && (
+              <>
+                <Link to="/wishlist" className="relative text-white p-2 rounded-full transition duration-300 hover:bg-white/10 hover:text-cyan-400">
+                  <FaHeart size={24} />
+                </Link>
+                <Link to="/cart" className="relative text-white p-2 rounded-full transition duration-300 hover:bg-white/10 hover:text-cyan-400">
+                  <FaShoppingCart size={24} />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
+            {/* Right side: Profile/Home/Login-Register */}
+            <div>
+              {isLoggedIn && userData && (
+                isHomePage ? (
+                  <button
+                    onClick={handleProfileClick}
+                    className="bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300 hover:bg-black hover:cursor-pointer hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
+                  >
+                    Profile
+                  </button>
+                ) : (
+                  <Link
+                    to="/"
+                    className="bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300 hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
+                  >
+                    Home
+                  </Link>
+                )
+              )}
+              {!isLoggedIn && isHomePage && !isAuthPage && (
+                <Link
+                  to="/login"
+                  className="bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300 hover:bg-black hover:cursor-pointer hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
+                >
+                  Login / Register
+                </Link>
+              )}
+            </div>
           </>
         )}
       </div>

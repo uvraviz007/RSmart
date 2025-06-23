@@ -108,9 +108,12 @@ function ItemModal({ item, onClose, onAddToCart, onBuyNow, onToggleWishlist, isW
                 </button>
                 <button
                   onClick={() => onToggleWishlist(item._id)}
-                  className="p-2 text-red-500 hover:text-red-400"
+                  className="p-2 rounded-full transition duration-300 hover:cursor-pointer group"
                 >
-                  {isWishlisted ? <FaHeart size={24} /> : <FaRegHeart size={24} />}
+                  {isWishlisted ? 
+                    <FaHeart className="text-red-500 group-hover:text-red-500 transition-colors duration-300" size={22}/> : 
+                    <FaRegHeart className="text-white group-hover:text-red-500 transition-colors duration-300" size={22}/>
+                  }
                 </button>
               </div>
             ) : (

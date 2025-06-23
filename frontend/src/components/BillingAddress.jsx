@@ -127,30 +127,33 @@ function BillingAddress() {
 
     return (
         <div className="bg-gradient-to-r from-black via-blue-950 to-cyan-700 min-h-screen flex flex-col">
-            <Navbar />
-            <div className="container mx-auto text-white p-4 flex-grow flex items-center justify-center">
-                <div className="bg-black bg-opacity-60 p-8 rounded-lg shadow-lg w-full max-w-md">
-                    <h1 className="text-3xl font-bold text-cyan-400 mb-8 text-center">Billing Information</h1>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <input type="text" name="fullName" placeholder="Full Name" onChange={handleChange} value={formData.fullName} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
-                        <input type="text" name="address" placeholder="Street Address" onChange={handleChange} value={formData.address} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
-                        <input type="text" name="city" placeholder="City" onChange={handleChange} value={formData.city} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
-                        <div className="flex gap-4">
-                            <input type="text" name="state" placeholder="State / Province" onChange={handleChange} value={formData.state} className="w-1/2 px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
-                            <input type="text" name="zipCode" placeholder="ZIP / Postal Code" onChange={handleChange} value={formData.zipCode} className="w-1/2 px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
-                        </div>
-                        <select name="country" value={formData.country} onChange={handleChange} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required>
-                            <option value="India">India</option>
-                            <option value="USA">United States</option>
-                            <option value="Canada">Canada</option>
-                        </select>
-                        
-                        {error && <p className="text-red-400 text-center">{error}</p>}
+            <div className="container mx-auto px-4 text-white flex-grow">
+                <Navbar />
+                <div className="flex items-center justify-center py-8">
+                    <div className="bg-black bg-opacity-60 p-8 rounded-lg shadow-lg w-full max-w-md">
+                        <h1 className="text-3xl font-bold text-cyan-400 mb-8 text-center">Billing Information</h1>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <input type="text" name="fullName" placeholder="Full Name" onChange={handleChange} value={formData.fullName} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
+                            <input type="text" name="address" placeholder="Street Address" onChange={handleChange} value={formData.address} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
+                            <input type="text" name="city" placeholder="City" onChange={handleChange} value={formData.city} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
+                            <div className="flex gap-4">
+                                <input type="text" name="state" placeholder="State / Province" onChange={handleChange} value={formData.state} className="w-1/2 px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
+                                <input type="text" name="zipCode" placeholder="ZIP / Postal Code" onChange={handleChange} value={formData.zipCode} className="w-1/2 px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
+                            </div>
+                            <select name="country" value={formData.country} onChange={handleChange} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required>
+                                <option value="India">India</option>
+                                <option value="USA">United States</option>
+                                <option value="Canada">Canada</option>
+                            </select>
+                            
+                            {error && <p className="text-red-400 text-center">{error}</p>}
 
-                        <button type="submit" disabled={loading} className="w-full bg-cyan-400 text-black py-3 rounded-lg font-semibold hover:bg-cyan-300 transition disabled:opacity-50">
-                            {loading ? 'Processing...' : 'Proceed to Payment'}
-                        </button>
-                    </form>
+                            <button type="submit" disabled={loading} className="w-full bg-transparent text-white px-4 py-3 mt-4 border border-white rounded-lg font-semibold transition duration-300
+                            hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] disabled:opacity-50">
+                                {loading ? 'Processing...' : 'Proceed to Payment'}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
             <Footer />
