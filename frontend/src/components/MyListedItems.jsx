@@ -175,7 +175,8 @@ function MyListedItems() {
             <h1 className="text-3xl font-bold text-cyan-400">My Listed Items</h1>
             <button
               onClick={() => navigate("/additem")}
-              className="bg-cyan-400 text-black px-6 py-2 rounded-lg font-semibold hover:bg-cyan-300 transition"
+              className="bg-transparent text-white px-6 py-2 border border-white rounded-lg font-semibold transition duration-300
+              hover:bg-black hover:cursor-pointer hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
             >
               Add New Item
             </button>
@@ -192,7 +193,8 @@ function MyListedItems() {
               <p className="text-gray-400 text-lg mb-4">No items listed yet</p>
               <button
                 onClick={() => navigate("/additem")}
-                className="bg-cyan-400 text-black px-6 py-2 rounded-lg font-semibold hover:bg-cyan-300 transition"
+                className="bg-transparent text-white px-6 py-2 border border-white rounded-lg font-semibold transition duration-300
+                hover:bg-black hover:cursor-pointer hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
               >
                 Add Your First Item
               </button>
@@ -216,16 +218,18 @@ function MyListedItems() {
                       Stock: {item.count}
                     </span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => handleEdit(item)}
-                      className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+                      className="flex-1 bg-transparent text-white py-2 border border-white rounded-lg font-semibold transition duration-300
+                      hover:bg-black hover:cursor-pointer hover:text-blue-400 hover:shadow-[0_0_10px_2px_rgba(96,165,250,0.7)]"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(item._id)}
-                      className="flex-1 bg-red-600 text-white py-2 rounded hover:bg-red-700 transition"
+                      className="flex-1 bg-transparent text-white py-2 border border-white rounded-lg font-semibold transition duration-300
+                      hover:bg-black hover:cursor-pointer hover:text-red-400 hover:shadow-[0_0_10px_2px_rgba(239,68,68,0.7)]"
                     >
                       Delete
                     </button>
@@ -353,14 +357,16 @@ function MyListedItems() {
                       setEditError("");
                       setEditMessage("");
                     }}
-                    className="flex-1 bg-gray-600 text-white py-2 rounded-lg font-semibold hover:bg-gray-500 transition"
+                    className="flex-1 bg-transparent text-white py-2 border border-white rounded-lg font-semibold transition duration-300
+                    hover:bg-black hover:text-gray-400 hover:shadow-[0_0_10px_2px_rgba(156,163,175,0.7)]"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={editLoading}
-                    className="flex-1 bg-cyan-400 text-black py-2 rounded-lg font-semibold hover:bg-cyan-300 transition disabled:opacity-50"
+                    className="flex-1 bg-transparent text-white py-2 border border-white rounded-lg font-semibold transition duration-300
+                    hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] disabled:opacity-50"
                   >
                     {editLoading ? "Updating..." : "Update Item"}
                   </button>

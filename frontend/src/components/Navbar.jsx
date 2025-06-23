@@ -49,24 +49,22 @@ function Navbar() {
     };
 
     fetchUserData();
+
+    const handleStorageChange = () => {
+        fetchUserData();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('cartUpdated', fetchCartCount);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('cartUpdated', fetchCartCount);
+    };
   }, [location.pathname]);
 
   const handleProfile = () => {
     navigate("/profile");
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch("http://localhost:5000/api/user/signout", {
-        method: "POST",
-        credentials: "include",
-      });
-      setIsLoggedIn(false);
-      setUserData(null);
-      navigate("/login");
-    } catch (err) {
-      alert("Logout failed");
-    }
   };
 
   // Detect if on login or signup page
@@ -85,7 +83,6 @@ function Navbar() {
       <div className="flex items-center gap-4">
         {isLoggedIn ? (
           isProfilePage ? (
-            <>
               <Link
                 to="/"
                 className="bg-transparent text-white px-4 py-2 border border-white transition duration-300
@@ -93,23 +90,7 @@ function Navbar() {
               >
                 Home
               </Link>
-              <button
-                onClick={handleLogout}
-                className="bg-transparent text-white px-4 py-2 border border-white transition duration-300 cursor-pointer
-                  hover:bg-black hover:text-red-400 hover:shadow-[0_0_10px_2px_rgba(239,68,68,0.7)] hover:animate-pulse"
-              >
-                Logout
-              </button>
-            </>
           ) : userData?.isSeller ? (
-            <>
-              <Link
-                to="/additem"
-                className="bg-transparent text-white px-4 py-2 border border-white transition duration-300
-                hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
-              >
-                Add Item
-              </Link>
               <button
                 onClick={handleProfile}
                 className="bg-transparent text-white px-4 py-2 border border-white transition duration-300 cursor-pointer
@@ -117,14 +98,6 @@ function Navbar() {
               >
                 Profile
               </button>
-              <button
-                onClick={handleLogout}
-                className="bg-transparent text-white px-4 py-2 border border-white transition duration-300 cursor-pointer
-                  hover:bg-black hover:text-red-400 hover:shadow-[0_0_10px_2px_rgba(239,68,68,0.7)] hover:animate-pulse"
-              >
-                Logout
-              </button>
-            </>
           ) : (
             <>
               <Link to="/wishlist" className="relative text-white p-2 hover:text-cyan-400">
@@ -144,13 +117,6 @@ function Navbar() {
                   hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)] hover:animate-pulse"
               >
                 Profile
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-transparent text-white px-4 py-2 border border-white transition duration-300 cursor-pointer
-                  hover:bg-black hover:text-red-400 hover:shadow-[0_0_10px_2px_rgba(239,68,68,0.7)] hover:animate-pulse"
-              >
-                Logout
               </button>
             </>
           )

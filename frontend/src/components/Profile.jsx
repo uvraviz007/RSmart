@@ -52,6 +52,22 @@ function Profile() {
     fetchUserData();
   }, [navigate]);
 
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:5000/api/user/signout", {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      // Notify other components about logout
+      window.dispatchEvent(new Event("storage")); 
+      
+      navigate("/login");
+    } catch (err) {
+      alert("Logout failed. Please try again.");
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -233,7 +249,8 @@ function Profile() {
               {!isEditing ? (
                 <button
                   onClick={handleEditClick}
-                  className="bg-cyan-400 text-black px-4 py-2 rounded-lg font-semibold hover:bg-cyan-300 transition"
+                  className="bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300 hover:cursor-pointer
+                  hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
                 >
                   Edit Profile
                 </button>
@@ -241,14 +258,16 @@ function Profile() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleCancelEdit}
-                    className="bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-500 transition"
+                    className="bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300
+                    hover:bg-black hover:cursor-pointer hover:text-gray-400 hover:shadow-[0_0_10px_2px_rgba(156,163,175,0.7)]"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSaveClick}
                     disabled={isLoading}
-                    className="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-400 transition disabled:opacity-50"
+                    className="bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300
+                    hover:bg-black hover:cursor-pointer hover:text-green-400 hover:shadow-[0_0_10px_2px_rgba(74,222,128,0.7)] disabled:opacity-50"
                   >
                     {isLoading ? "Saving..." : "Save"}
                   </button>
@@ -381,34 +400,38 @@ function Profile() {
                   </div>
                 </div>
               )}
+            </div>
 
-              {userData.isSeller && (
-                <div className="mt-4 p-3 bg-cyan-900 bg-opacity-30 rounded-lg border border-cyan-400">
-                  <p className="text-cyan-400 text-center mb-4">
-                    You have seller privileges. You can add and manage items for sale.
-                  </p>
+            {userData.isSeller ? (
+                <div className="mt-6">
                   <button
                     onClick={() => navigate("/my-listed-items")}
-                    className="w-full bg-cyan-400 text-black py-2 rounded-lg font-semibold hover:bg-cyan-300 transition"
+                    className="w-full bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300 cursor-pointer
+                    hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
                   >
                     View My Listed Items
                   </button>
                 </div>
-              )}
-
-              {!userData.isSeller && (
-                <div className="mt-4 p-3 bg-blue-900 bg-opacity-30 rounded-lg border border-blue-400">
-                  <p className="text-blue-400 text-center mb-4">
-                    You have buyer privileges. You can view your purchase history.
-                  </p>
+              ) : (
+                <div className="mt-6">
                   <button
                     onClick={() => navigate("/purchase-history")}
-                    className="w-full bg-blue-400 text-black py-2 rounded-lg font-semibold hover:bg-blue-300 transition"
+                    className="w-full bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300 cursor-pointer
+                    hover:bg-black hover:text-cyan-400 hover:shadow-[0_0_10px_2px_rgba(34,211,238,0.7)]"
                   >
                     View Purchase History
                   </button>
                 </div>
               )}
+
+            <div className="mt-8 border-t border-gray-700 pt-6">
+              <button
+                onClick={handleLogout}
+                className="w-full bg-transparent text-white px-4 py-2 border border-white rounded-lg font-semibold transition duration-300 cursor-pointer
+                hover:bg-black hover:text-red-400 hover:shadow-[0_0_10px_2px_rgba(239,68,68,0.7)]"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
@@ -446,14 +469,16 @@ function Profile() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowPasswordModal(false)}
-                className="flex-1 bg-gray-600 text-white py-2 rounded-lg font-semibold hover:bg-gray-500 transition"
+                className="flex-1 bg-transparent text-white py-2 border border-white rounded-lg font-semibold transition duration-300
+                hover:bg-black hover:text-gray-400 hover:shadow-[0_0_10px_2px_rgba(156,163,175,0.7)]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdateProfile}
                 disabled={isLoading || !currentPassword.trim()}
-                className="flex-1 bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-400 transition disabled:opacity-50"
+                className="flex-1 bg-transparent text-white py-2 border border-white rounded-lg font-semibold transition duration-300
+                hover:bg-black hover:text-green-400 hover:shadow-[0_0_10px_2px_rgba(74,222,128,0.7)] disabled:opacity-50"
               >
                 {isLoading ? "Saving..." : "Save Changes"}
               </button>
