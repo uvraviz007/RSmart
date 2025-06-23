@@ -12,7 +12,7 @@ const purchaseSchema = new mongoose.Schema({
         ref: 'item',
         required: true
     },
-    count: {
+    quantity: {
         type: Number,
         default: 1
     },
@@ -27,6 +27,10 @@ const purchaseSchema = new mongoose.Schema({
     date: {
         type: Date,
         default: Date.now
+    },
+    paymentId: {
+        type: String,
+        required: true
     }
 });
 
