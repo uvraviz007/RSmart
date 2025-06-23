@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
+
+const loadScript = (src) => {
+    return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+};
 
 function BillingAddress() {
     const [formData, setFormData] = useState({
@@ -16,6 +26,16 @@ function BillingAddress() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
+    useEffect(() => {
+        const loadRazorpay = async () => {
+            const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+            if (!res) {
+                setError('Razorpay SDK failed to load. Are you online?');
+            }
+        };
+        loadRazorpay();
+    }, []);
+    
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -25,7 +45,6 @@ function BillingAddress() {
         setLoading(true);
         setError('');
 
-        // Basic validation
         for (const key in formData) {
             if (!formData[key]) {
                 setError(`Please fill out the ${key.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`);
@@ -35,20 +54,69 @@ function BillingAddress() {
         }
         
         try {
-            const res = await fetch('http://localhost:5000/api/cart/checkout', {
+            const orderRes = await fetch('http://localhost:5000/api/payment/create-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ shippingAddress: formData }),
             });
-            const data = await res.json();
+            const orderData = await orderRes.json();
+            if (!orderRes.ok) throw new Error(orderData.error || 'Failed to create order');
+
+            const { order } = orderData;
+
+            const keyRes = await fetch('http://localhost:5000/api/payment/get-key', { credentials: 'include' });
+            const { key } = await keyRes.json();
             
-            if (res.ok) {
-                alert('Purchase successful!');
-                navigate('/profile');
-            } else {
-                throw new Error(data.error || 'Checkout failed');
-            }
+            const userRes = await fetch('http://localhost:5000/api/user/me', { credentials: 'include' });
+            const userData = userRes.ok ? (await userRes.json()).user : {};
+
+            const options = {
+                key,
+                amount: order.amount,
+                currency: order.currency,
+                name: 'RSmart',
+                description: 'Purchase Transaction',
+                order_id: order.id,
+                handler: async function (response) {
+                    setLoading(true);
+                    const verifyRes = await fetch('http://localhost:5000/api/payment/verify-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            ...response,
+                            shippingAddress: formData,
+                        }),
+                    });
+
+                    const verifyData = await verifyRes.json();
+                    if (verifyRes.ok) {
+                        alert('Purchase successful!');
+                        navigate('/profile');
+                    } else {
+                        throw new Error(verifyData.error || 'Payment verification failed');
+                    }
+                },
+                prefill: {
+                    name: userData.lastName ? `${userData.firstName} ${userData.lastName}` : userData.firstName,
+                    email: userData.email,
+                    contact: userData.mobile,
+                },
+                notes: {
+                    address: `${formData.address}, ${formData.city}, ${formData.state}, ${formData.zipCode}`,
+                },
+                theme: {
+                    color: '#0891b2', // a shade of cyan
+                },
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', (response) => {
+                setError(`Payment failed: ${response.error.description}`);
+                console.error(response.error);
+            });
+            rzp.open();
+            
         } catch (err) {
             setError(err.message);
             console.error(err);
@@ -64,14 +132,14 @@ function BillingAddress() {
                 <div className="bg-black bg-opacity-60 p-8 rounded-lg shadow-lg w-full max-w-md">
                     <h1 className="text-3xl font-bold text-cyan-400 mb-8 text-center">Billing Information</h1>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <input type="text" name="fullName" placeholder="Full Name" onChange={handleChange} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400"/>
-                        <input type="text" name="address" placeholder="Street Address" onChange={handleChange} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400"/>
-                        <input type="text" name="city" placeholder="City" onChange={handleChange} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400"/>
+                        <input type="text" name="fullName" placeholder="Full Name" onChange={handleChange} value={formData.fullName} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
+                        <input type="text" name="address" placeholder="Street Address" onChange={handleChange} value={formData.address} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
+                        <input type="text" name="city" placeholder="City" onChange={handleChange} value={formData.city} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
                         <div className="flex gap-4">
-                            <input type="text" name="state" placeholder="State / Province" onChange={handleChange} className="w-1/2 px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400"/>
-                            <input type="text" name="zipCode" placeholder="ZIP / Postal Code" onChange={handleChange} className="w-1/2 px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400"/>
+                            <input type="text" name="state" placeholder="State / Province" onChange={handleChange} value={formData.state} className="w-1/2 px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
+                            <input type="text" name="zipCode" placeholder="ZIP / Postal Code" onChange={handleChange} value={formData.zipCode} className="w-1/2 px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required />
                         </div>
-                        <select name="country" value={formData.country} onChange={handleChange} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                        <select name="country" value={formData.country} onChange={handleChange} className="w-full px-4 py-2 rounded bg-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-400" required>
                             <option value="India">India</option>
                             <option value="USA">United States</option>
                             <option value="Canada">Canada</option>
@@ -80,7 +148,7 @@ function BillingAddress() {
                         {error && <p className="text-red-400 text-center">{error}</p>}
 
                         <button type="submit" disabled={loading} className="w-full bg-cyan-400 text-black py-3 rounded-lg font-semibold hover:bg-cyan-300 transition disabled:opacity-50">
-                            {loading ? 'Processing...' : 'Confirm Purchase'}
+                            {loading ? 'Processing...' : 'Proceed to Payment'}
                         </button>
                     </form>
                 </div>
