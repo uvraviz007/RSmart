@@ -30,7 +30,17 @@ const userSchema = new mongoose.Schema({
   wishlist: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'item'
-  }]
+  }],
+  emailOtp: {
+    type: String,
+  },
+  emailOtpExpiry: {
+    type: Date,
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  }
 });
 
 export const User = mongoose.model("user", userSchema);

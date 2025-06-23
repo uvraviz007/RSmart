@@ -5,7 +5,30 @@ import jwt from "jsonwebtoken"; // Import JWT for token generation
 import dotenv from 'dotenv'; // Import dotenv for environment variables
 import { item } from "../models/item_model.js";
 import { Purchase } from "../models/purchase.model.js";
+import nodemailer from "nodemailer";
+import { Otp } from "../models/otp.model.js";
 dotenv.config(); // Load environment variables from .env file
+
+// Helper function to send OTP email
+const sendOtpEmail = async (to, otp) => {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER, // Your email address
+            pass: process.env.EMAIL_PASS, // Your email password or app password
+            // console.log(process.env.EMAIL_USER,process.env.EMAIL_PASS);
+        },
+    });
+
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to,
+        subject: 'Your Email Verification OTP',
+        text: `Your OTP for email verification is: ${otp}`,
+    };
+
+    await transporter.sendMail(mailOptions);
+};
 
 // Define Zod schema for validation
 const userSchema = z.object({
@@ -17,68 +40,104 @@ const userSchema = z.object({
         .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, "Password must include one uppercase letter, one lowercase letter, one digit, and one special character"),
 });
 
-// Import zod at the top if not already
-const signUp = async (req, res) => {
+// POST /signup - send OTP only
+const sendEmailOtp = async (req, res) => {
     try {
-        // Validate input using Zod
-        const validatedData = userSchema.parse(req.body);
+        const { email, firstName, mobile } = req.body;
+        if (!email || !firstName || !mobile) {
+            return res.status(400).json({ error: "Email, first name, and mobile are required to send OTP." });
+        }
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: "Email already exists" });
+        }
+        // Generate OTP and expiry (valid for 10 minutes)
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiry = new Date(Date.now() + 10 * 60 * 1000);
+        // Upsert OTP in Otp collection
+        await Otp.findOneAndUpdate(
+            { email },
+            { otp, expiry },
+            { upsert: true, new: true }
+        );
+        await sendOtpEmail(email, otp);
+        res.status(200).json({ message: "OTP sent to your email." });
+    } catch (error) {
+        console.error("Error sending OTP:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
 
-        // Check if email or mobile already exists
+// POST /verify-email-otp - verify OTP only
+const verifyEmailOtp = async (req, res) => {
+    const { email, otp } = req.body;
+    try {
+        const otpDoc = await Otp.findOne({ email });
+        if (!otpDoc) {
+            return res.status(400).json({ error: "No OTP found. Please request a new one." });
+        }
+        if (otpDoc.otp !== otp) {
+            return res.status(400).json({ error: "Invalid OTP" });
+        }
+        if (otpDoc.expiry < new Date()) {
+            return res.status(400).json({ error: "OTP expired. Please request a new one." });
+        }
+        // OTP is valid, delete it (one-time use)
+        await Otp.deleteOne({ email });
+        res.status(200).json({ message: "Email verified successfully" });
+    } catch (error) {
+        console.error("Error verifying email OTP:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+// POST /register - create user after OTP verified
+const register = async (req, res) => {
+    try {
+        const validatedData = userSchema.parse(req.body);
+        // Check if user already exists
         const existingUser = await User.findOne({ email: validatedData.email });
         if (existingUser) {
             return res.status(400).json({ error: "Email already exists" });
         }
-        const existingMobile = await User.findOne({ mobile: validatedData.mobile });
-        if (existingMobile) {
-            return res.status(400).json({ error: "Mobile number already exists" });
+        // Check if OTP was verified (no OTP doc should exist for this email)
+        const otpDoc = await Otp.findOne({ email: validatedData.email });
+        if (otpDoc) {
+            return res.status(400).json({ error: "Please verify your email before registering." });
         }
-
         // Hash the password
         const hashedPassword = await bcrypt.hash(validatedData.password, 10);
-
-        // Only allow isSeller if passed and truthy (you can also add seller-auth logic here)
-        const isSeller = req.body.isSeller === true || req.body.isSeller === "true"; // Accepts string "true" or boolean true
-
-        // Create a new User
+        const isSeller = req.body.isSeller === true || req.body.isSeller === "true";
         const newUser = new User({
             ...validatedData,
             password: hashedPassword,
-            isSeller
+            isSeller,
+            isEmailVerified: true
         });
-
         await newUser.save();
-
-        // Generate JWT token
+        // Generate JWT and set cookie (auto-login)
         const token = jwt.sign(
             { userId: newUser._id, email: newUser.email, isSeller: newUser.isSeller },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
-
-        // Set cookie
         const cookieOptions = {
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "Strict"
         };
-
         res.cookie("jwt", token, cookieOptions);
-
-        res.status(201).json({
-            message: "Successfully signed up and logged in",
-            token,
-            user: newUser
-        });
+        res.status(201).json({ message: "Signup successful. You are now logged in.", token, user: newUser });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: error.errors });
         }
-        console.error("Error creating user:", error);
+        console.error("Error registering user:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
-
 
 const signIn = async (req, res) => {
     try {
@@ -89,6 +148,9 @@ const signIn = async (req, res) => {
         const user = await User.findOne({ email: validatedData.email });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
+        }
+        if (!user.isEmailVerified) {
+            return res.status(401).json({ error: "Email not verified. Please verify your email before signing in." });
         }
 
         // Compare password
@@ -314,7 +376,7 @@ const toggleWishlist = async (req, res) => {
 };
 
 export {
-  signUp,
+  sendEmailOtp,
   signIn,
   updateUser,
   deleteUser,
@@ -325,5 +387,7 @@ export {
   getDetails,
   checkLoginStatus,
   getWishlist,
-  toggleWishlist
+  toggleWishlist,
+  verifyEmailOtp,
+  register
 };

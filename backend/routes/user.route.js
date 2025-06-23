@@ -1,9 +1,9 @@
 import express from 'express'
-import {checkLoginStatus,getSellers,getAllPurchases,getUsers,deleteUser,signUp,signIn,updateUser,signOut, getDetails, getWishlist, toggleWishlist} from '../controllers/user.controller.js'
+import {checkLoginStatus,getSellers,getAllPurchases,getUsers,deleteUser,sendEmailOtp,signIn,updateUser,signOut, getDetails, getWishlist, toggleWishlist, verifyEmailOtp, register} from '../controllers/user.controller.js'
 import validateUser from '../middleware/user.middleware.js';
 const router=express.Router();
 
-router.post('/signup',signUp)
+router.post('/signup',sendEmailOtp)
 router.post('/signout',signOut)
 router.post('/signIn',signIn)
 router.put('/:userId/update',validateUser,updateUser)
@@ -16,5 +16,7 @@ router.get('/allusers',getUsers)
 router.get('/allSellers',getSellers)
 router.get('/:userId',validateUser,getDetails)
 router.get('/me', validateUser,checkLoginStatus);
+router.post('/verify-email-otp', verifyEmailOtp)
+router.post('/register', register)
 
 export default router
